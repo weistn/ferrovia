@@ -1,0 +1,70 @@
+railway (
+    WL10 /-> "Cross"
+    G1 G1
+    // @(650 mm, 50 mm, 0 mm, 270 deg)
+    4 * L6
+    13 * LC20
+    3 * G4
+)
+
+railway (
+    "Inner"
+    @(800 mm, 116 mm, 0 mm, 270 deg)
+    G05
+    4 * L5
+    13 * LC19
+    3 * G4
+)
+
+railway (
+    WL10 /-> "Pendel"
+    "Inner" <-/ "Cross" ->/ DKW10
+    L6
+    2 * L5
+    4 * LC6
+    BWL9 /-> "Gleis4"
+    7 * LC18
+    G4
+)
+
+railway (
+    "Gleis4"
+    7 * LC17
+    G4
+)
+
+railway (
+    "Pendel"
+    G1
+    G025
+    4 * L5
+    3 * LC5
+    BWL9 /-> "Gleis6"
+    2 * LC12
+    G4
+)
+
+railway (
+    "Gleis6"
+    3 * LC5
+    G05
+    RC5
+    G4
+)
+
+/*
+railway (
+    "Pendel"
+    BWL9 /-> ((3 * LC9) G025 G05 2 * RC9 3 * G4) 
+    3 * LC10
+    G05
+    2 * RC10
+    3 * G4
+)
+*/
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 0 cm) (200 cm, 0 cm) (230 cm, 10 cm) (470 cm, 10 cm) (470 cm, 194 cm) (0 cm, 194 cm) 
+}

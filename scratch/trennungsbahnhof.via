@@ -1,0 +1,355 @@
+/********************
+ *
+ * Wendel West
+ *
+ ********************/
+
+railway (
+    R9
+    G1
+    L10
+    G1 G05
+    3 * L6
+    "WendelWest1"
+)
+
+railway (
+    R10
+    G1
+    L9
+    G1 G05
+    3 * L5
+    "WendelWest2"
+)
+
+/********************
+ *
+ * Wendel Ost
+ *
+ ********************/
+
+railway (
+    9 * R6
+    "WendelOst1"
+)
+
+railway (
+    9 * R5
+    "WendelOst2"
+)
+
+/********************
+ *
+ * Anschluss West
+ *
+ ********************/
+
+railway (
+    "WendelWest1"
+    @(6 cm, 145 cm, 0 mm, 180 deg)
+    3 * LC7
+    BWL9 /-> (LC7 2 * LC9 (WL10 /-> "Gleis5West") "Gleis4West")
+    LC7 
+    (4 * LC15  "AbstellungRE3" ->/ DKW10 /-> "Gleis2West" (LC9 LC9 "AbstellungRE" ->/ WR10 "Gleis1West")) <-/ WL10
+    "Gleis3West"
+)
+
+railway (
+    "WendelWest2"
+    @(12.1 cm, 145 cm, 0 mm, 180 deg)
+    5 * LC5
+    BWL9 /-> (LC5 BWL9 /-> "GuetergleiseWest" "Gleis7West")
+    "Gleis6West"
+)
+
+/********************
+ *
+ * Anschluss Ost
+ *
+ ********************/
+
+railway (
+    "WendelOst1"
+    @(586 cm, 65 cm, 0 mm, 180 deg)
+    WR10 /-> (RC10 RC10 RC10 (WR10 /-> "Gleis3OstTMP") "Gleis4OstTMP")
+)
+
+railway (
+    "WendelOst2"
+    @(579.9 cm, 65 cm, 0 mm, 180 deg)
+    2 * RC5
+    WR10 /-> "Gleis6OstTMP"
+    G05
+    BWR9 /-> "Gleis7OstTMP"
+    "Gleis8OstTMP"
+)
+/********************
+ *
+ * Personengleise Abzweig Nebenbahn
+ *
+ ********************/
+
+railway (
+    "Gleis1West"
+    2 * G4
+)
+
+railway (
+    "Gleis2West"
+    2 * LC40
+    2 * G4
+)
+
+/********************
+ *
+ * Personengleise von West nach Ost
+ *
+ ********************/
+
+railway (
+    "Gleis3West"
+    G025 4 * D8
+    6 * LC20
+    2 * G4
+    2 * G1
+    7 * LC40
+    LC24
+    D8 D8 D8 D8 D8
+    4 * LC10
+    2 * LC9
+    "Gleis3Ost"
+)
+
+railway (
+    "Gleis4West"
+    6 * LC18
+    2 * G4
+    2 * G1
+    3 * D8
+    7 * LC39
+    LC23
+    2 * LC18
+    3 * LC10
+    "Gleis4Mitte"
+)
+
+railway (
+    "Gleis5West"
+    4 * LC20
+    2 * G4
+    2 * G1
+    G05 G025 3 * D8
+    7 * LC37
+    G05 5 * D8
+    9 * LC13
+    G05
+)
+
+/********************
+ *
+ * Personengleise von Ost nach West
+ *
+ ********************/
+
+railway (
+    "Gleis6West"
+    2 * LC9
+    G025 3 * D8
+    2 * LC16
+    2 * D8
+    3 * LC16
+    2 * G4
+    2 * G1
+    G1 4 * D8
+    7 * LC36
+    G05 2 * D8
+    2 * LC10
+    1 * LC10
+    G025
+    6 * LC10
+    G025
+    "Gleis6Ost"
+)
+
+railway (
+    "Gleis7West"
+    3 * G4
+    G025 D8 D8
+    5 * LC34
+    G025 4 * D8 
+    2 * LC34
+    G05 G025
+    "Gleis7Ost"
+)
+
+/********************
+ *
+ * Guetergleise
+ *
+ ********************/
+
+railway (
+    "GuetergleiseWest"
+    LC5
+    "GuetergleiseWest2" <-/ WL10
+    WR15 /-> (G05 WR10 /-> "Guetergleis12" "Guetergleis11")
+    WL15 /-> "Guetergleis10"
+    "Guetergleis9"
+)
+
+railway (
+    "GuetergleiseWest2"
+    RC10
+    "Guetergleis8"
+)
+
+railway (
+    "GuetergleiseOst1"
+    WR10 /-> (4 * RC33 G4 G05 D8 D8)
+    G05
+    WR15 /-> (D8 D8 D8 D8 2 * RC40 G1 G1 G1 G025 D8 D8)
+    "GueterAbstellungOst1" ->/ DKW10 /-> (RC40 2 * G1 G05)
+    G05 D8 D8
+    "GueterAbstellungOst2" ->/ DKW10 /-> (RC6 G05 G025)
+    RC10
+    G025
+    "LokAbstellungOst" ->/ WR10
+    WR15 /-> "GueterVerladung1"
+    WL15 /-> "GueterVerladung2"
+    "GueterVerladung3"
+)
+
+railway (
+    "Guetergleis8"
+    2 * G4
+    2 * G1 G05
+    6 * LC30
+    DKW10 /<- "GuetergleiseOst1" /-> "Zuggleis"
+    2 * LC8
+    LC20
+)
+
+railway (
+    "Guetergleis9"
+    G4
+)
+
+railway (
+    "Guetergleis10"
+    R10
+    G4
+)
+
+railway (
+    "Guetergleis11"
+    RC20
+    G4
+)
+
+railway (
+    "Guetergleis12"
+    3 * RC11
+    G4
+)
+
+railway (
+    "Zuggleis"
+    LC8
+    G05
+    5 * LC8
+    G05
+    6 * LC8
+    G1
+)
+
+railway (
+    "GueterVerladung1"
+    G4
+    G4
+)
+
+railway (
+    "GueterVerladung2"
+    G4
+    3 * G1
+)
+
+railway (
+    "GueterVerladung3"
+    2 * DG1
+    L10
+    G4
+    G1
+)
+
+railway (
+    "GueterAbstellungOst1"
+    2 * LC10
+    WL15 /-> (G1 G1 G1 G05)
+    L10
+    2 * G1 G05
+)
+
+railway (
+    "GueterAbstellungOst2"
+    WL15 /-> (R20 G025 3 * LC19 2 * G1 G05)
+    5 * LC19
+    2 * G1 G05
+)
+
+railway (
+    "LokAbstellungOst"
+    2 * LC10
+    WL15 /-> 3 * G1
+    L10
+    2 * G1
+)
+
+/********************
+ *
+ * AbstellungRE
+ *
+ ********************/
+
+railway (
+    "AbstellungRE"
+    WR15 /-> "AbstellungRE1"
+    "AbstellungRE2"
+)
+
+railway (
+    "AbstellungRE1"
+    8 * RC17
+    2 * G1
+)
+
+railway (
+    "AbstellungRE2"
+    G1 G05 D8
+    5 * RC16
+    2 * G1
+)
+
+railway (
+    "AbstellungRE3"
+    6 * RC15
+    2 * G1
+)
+
+/********************
+ *
+ * Grundplatte
+ *
+ ********************/
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 80 cm) (110 cm, 80 cm) (164 cm, 90 cm) (460 cm, 90 cm) (460 cm, 0 cm) (600 cm, 0 cm) (600 cm, 274 cm) (0 cm, 274 cm) 
+}
+
+ground {
+    Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 274 cm) (600 cm, 274 cm) (600 cm, 380 cm) (0 cm, 380 cm) (0 cm, 330 cm) (530 cm, 330 cm)
+}

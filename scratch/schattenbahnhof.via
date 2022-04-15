@@ -1,0 +1,164 @@
+/********************
+ *
+ * Wendel West
+ *
+ ********************/
+
+railway (
+    "WendelWest1"
+    3 * R6
+    "AnschlussSBFWest1"
+)
+
+railway (
+    "WendelWest2"
+    3 * R5
+    "AnschlussSBFWest2"
+)
+
+/********************
+ *
+ * Wendel Ost
+ *
+ ********************/
+
+railway (
+    "WendelOst1"
+    17 * L6
+    "AnschlussSBFOst1"
+)
+
+railway (
+    "WendelOst2"
+    18 * L5
+    "AnschlussSBFOst2"
+)
+
+/********************
+ *
+ * Anschluss West
+ *
+ ********************/
+
+railway (
+    "WendelWest1"
+    @(6 cm, 145 cm, 0 mm, 180 deg)
+    3 * LC7
+)
+
+railway (
+    "WendelWest2"
+    @(12.1 cm, 145 cm, 0 mm, 180 deg)
+    3 * LC5
+)
+
+/********************
+ *
+ * Anschluss Ost
+ *
+ ********************/
+
+railway (
+    "WendelOst1"
+    @(586 cm, 65 cm, 0 mm, 180 deg)
+    G1
+)
+
+railway (
+    "WendelOst2"
+    @(579.9 cm, 65 cm, 0 mm, 180 deg)
+    2 * RC5
+    G1
+)
+
+/********************
+ *
+ * Anschluss Schattenbahnhof West
+ *
+ ********************/
+
+railway (
+    "AnschlussSBFWest1"
+    G1 G05
+    R10
+    G1
+    L9
+    2 * G4
+    3 * G1
+    R6
+    G4
+    G1
+    5 * R5
+
+    G1 G025
+    1 * R5
+    2 * G1 5 * D8
+    1 * L5
+)
+
+railway (
+    "AnschlussSBFWest2"
+    G1 G05
+    R9
+    G1
+    L10
+    1 * G4
+    3 * G1
+    G05 G025
+    2 * R6
+    G4 G05 G025 4 * D8
+    7 * L5
+    G4
+    L5
+
+    3 * G4
+    3 * G1
+    3 * L6
+    3 * L6
+    3 * G4
+    2 * G1
+)
+
+/********************
+ *
+ * Anschluss Schattenbahnhof Ost
+ *
+ ********************/
+
+railway (
+    "AnschlussSBFOst1"
+    G1 G05
+    2 * R6
+    3 * G4
+    G1
+    G1 G05  
+    3 * L6
+    G1
+    3 * L6
+)
+
+railway (
+    "AnschlussSBFOst2"
+    G05 2 * D8
+    2 * L5
+    G1 G1 G05 G025
+    5 * R6
+)
+
+/********************
+ *
+ * Grundplatte
+ *
+ ********************/
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 80 cm) (110 cm, 80 cm) (164 cm, 90 cm) (460 cm, 90 cm) (460 cm, 0 cm) (600 cm, 0 cm) (600 cm, 274 cm) (0 cm, 274 cm) 
+}
+
+ground {
+    Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 274 cm) (600 cm, 274 cm) (600 cm, 380 cm) (0 cm, 380 cm) (0 cm, 330 cm) (530 cm, 330 cm)
+}

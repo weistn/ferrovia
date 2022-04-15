@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>Track Viewer</title>
+        <link rel="stylesheet" href="/ui.css"> 
+        <link rel="stylesheet" href="/switchtower/tracks.css"> 
+        <link rel="stylesheet" href="/view2d/svg.css">
+        <script src="/_rpc.js"></script>
+        <script src="/ui.js"></script>
+        <script src="/view2d/render.js"></script>
+        <script src="/switchtower/tracks.js"></script>
+    </head>
+    <body onload="init()">
+        <script>
+
+
+        </script>
+
+        <div class="lb-top"><div class="lb-menu">
+            <div class="lb-menu-btn"><i class="material-icons-outlined lb-menu">menu</i></div>
+            <div class="lb-menu-content">
+                <a id="select-view2d">2D Viewer</a>
+                <a id="select-switchtower">Switch Tower</a>
+            </div>
+            </div>
+            <span class="lb-spacer"></span>
+            <span id="title" class="lb-title">Tracks Diagram 1</span>
+            <span class="lb-spacer"></span>
+            <label for="main-search">
+                <i class="material-icons-outlined md-18">search</i>
+            </label><input id="main-search" type="text" class="lb-search" placeholder="Search ..." "="">
+        </div>
+
+        <div class="lb-content"><svg id="trackdiagram" class="trackdiagram-bg" style="display:none"></svg><svg id="view2d">
+            <pattern id="graph-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><g fill-rule="evenodd"><g fill="#000"><path opacity=".1" d="M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z" /><path opacity="0.3" d="M6 5V0H5v5H0v1h5v94h1V6h94V5H6z" /></g></g></pattern>
+            <g id="view2d-ground" transform="translate(5 5) scale(0.5)"></g>
+            <rect x="0" y="0" width="100%" height="100%" fill="url(#graph-pattern)"></rect>
+            <g id="view2d-measure"></g>
+            <g id="view2d-tracks" transform="translate(5 5) scale(0.5)"></g>
+        </svg></div>
+
+        <div class="lb-bottom">
+            <span class="lb-spacer"></span>
+            Last modified: 1.7.2021
+        </div>
+    </body>
+</html>

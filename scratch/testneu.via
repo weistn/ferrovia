@@ -1,0 +1,54 @@
+railway "West-Ost" (
+    ...West
+    G1
+    WL15(w1)----\
+    G1          R9
+    G4          G1
+    |           G1
+    |           WR15(w2)----\
+    |           G1          G1
+    |           |           G1
+    G1          R9
+    WR15(w3)----/
+    G1
+    G4          ...Ausfahrt
+    |           G1
+    |           G1
+    DKW10--------X
+    G1          G1
+    G1          G1
+    G1          Einfahrt...
+    G1
+    DW15(w5)----\-----------\
+    R9          G1          L9
+    G1          G1          G1
+    L9          G1          R9
+    DKW15(w6)---/-----------/
+    Strecke()
+    Ost...
+)
+
+railway Strecke (
+
+)
+
+schema (
+    ...West
+    @(5,5)
+    5 * h
+    switch-left(w1)-----\
+    5*h                 4*h
+    |                   switch-left(w1)-----\
+    5*h                 5*h                 3*h
+    |                   |
+    switch-right(w2)----/
+    |
+    5*h
+    |
+    |
+    switch-cross-left(w4)
+)
+
+config w1 {
+    DCC: 1004
+}

@@ -1,0 +1,89 @@
+
+railway (
+    "Zulauf"
+    @(200 cm, 17 cm, 0 mm, 270 deg)
+    "Gleis1" <-/ WR10
+    "Gleis2" <-/ DKW10 /<- (D8 "von Ablauf")
+    "Gleis3"
+)
+
+railway (
+    "Ablauf"
+    "von Ablauf" <-/ WR10
+    G1 G05
+    "Gleis4"
+)
+
+railway (
+    "Gleis1"
+    D8
+    G1 G05
+    LC20 LC20
+    G1 G05 G025
+    3 * L6
+    G05
+    L10 L10
+    12 * LC16
+    2 * G4
+)
+
+railway (
+    "Gleis2"
+    D8
+    LC19 LC19
+    WL10 /-> "Gleis2b"
+    G025
+    3 * L5
+    G05
+    L9 L9
+    12 * LC15
+    2 * G4
+)
+
+railway (
+    "Gleis2b"
+    4 * LC5
+    12 * LC6
+    5 * D8
+    6 * LC7
+    10 * LC14
+    "Abstellgleis" ->/ WR10
+    2 * G4
+)
+
+railway (
+    "Gleis3"
+    G1 G05 G025
+    4 * L6
+    12 * LC13
+    2 * G4
+)
+
+railway (
+    "Gleis4"
+    G1 G05 G025
+    4 * L5
+    BWL9 /-> "Gleis4b"
+    6 * LC7
+    2 * G4
+)
+
+railway (
+    "Gleis4b"
+    6 * LC7
+    2 * G4
+)
+
+railway (
+    "Abstellgleis"
+    6 * RC8
+    8 * RC15
+    R6
+    8 * RC7
+)
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 0 cm) (110 cm, 0 cm) (164 cm, 10 cm) (470 cm, 10 cm) (470 cm, 194 cm) (0 cm, 194 cm) 
+}

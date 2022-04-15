@@ -1,0 +1,37 @@
+.tracks-bgline {
+    stroke: rgb(160,160,160);
+    stroke-width: 1;
+}
+
+.tracks-bgcell {
+    fill: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+}
+
+.tracks-bgcell:hover {
+    opacity: 1;
+}
+
+.tracks-bgcell.selected {
+    opacity: 1;
+    fill: rgba(0, 0, 0, 0.5);
+}
+
+.track {
+    fill: rgb(0, 0, 0);
+}
+
+.track-block {
+    fill: rgb(255, 255, 255);
+    stroke-width: 1;
+    stroke: rgb(0, 0, 0);
+}
+
+.track-blocktext {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+}
+
+.trackdiagram-bg {
+    background-color: rgb(199,215,181);
+}

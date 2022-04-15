@@ -1,0 +1,320 @@
+
+railway (
+    "Zulauf1"
+    @(70 cm, 270 cm, 0 mm, 270 deg)
+    24 * RC7
+    "Gleis3" <-/ BWR9 
+    WR10 /-> "Gleis1"
+    "Gleis2"
+)
+
+railway (
+    "Zulauf2"
+    @(70 cm, 263.9 cm, 0 mm, 270 deg)
+    3 * R6
+    6 * RC5
+    BWR9 /-> "Gleis4"
+    "Gleis5"
+)
+
+railway (
+    "Zulauf3"
+    @(70 cm, 257.8 cm, 0 mm, 270 deg)
+    4 * R5
+    5 * RC6
+    BWR9 /-> "Zulauf3a"
+    "Zulauf3b"
+)
+
+railway (
+    "Zulauf3a"
+    2 * RC9
+    G05
+    WR10 /-> "Gleis6"
+    "Gleis7"
+)
+
+railway (
+    "Zulauf3b"
+    3 * RC9
+    WR10 /-> "Gleis8"
+    "Gleis10" <-/ WL10
+    "Gleis9"
+)
+
+railway (
+    "Gleis1West"
+    1 * R20
+    "Gleis2West" ->/ WL10
+    "Gleis3West" ->/ BWL9
+    WL10 /<- "BBWZulauf"
+
+)
+
+railway (
+    "Gleis1"
+    7 * RC19
+    2 * G4
+    2 * G1 G05 G025
+    8 * R20
+    "Gleis1West"
+)
+
+railway (
+    "Gleis2"
+    G1
+    5 * RC19
+    2 * G4
+)
+
+railway (
+    3 * G1
+    8 * RC25
+    LC10
+    G05
+    "Gleis2West"
+)
+
+railway (
+    "Gleis3"
+    3 * RC20
+    G05 G025
+    4 * RC20
+    2 * G4
+)
+
+railway (
+    3 * G1
+    6 * RC30
+    G1 G05
+    3 * RC20
+    "Gleis3West"
+)
+
+railway (
+    "Gleis4"
+    3 * RC9
+    G1
+    G025
+    4 * RC17
+    2 * G4
+    3 * G1 G05
+    4 * RC25
+    2 * RC30
+    G1 G1
+    3 * RC11
+    "Gleis4West"
+)
+
+railway (
+    "Gleis4West"
+    "Gleis5West" ->/ BWL9
+    G05
+    2 * RC11
+)
+
+railway (
+    "Gleis5"
+    3 * RC8
+    G05
+    4 * RC15
+    3 * G4
+    G025
+    R20
+)
+
+railway (
+    3 * RC30
+    G1 G1 G05
+    1 * RC30
+    4 * RC10
+    "Gleis5West"
+)
+
+railway (
+    "Gleis6"
+    G4 G4
+    G1 G1 G1
+    5 * RC27
+    "Gleis6West"
+)
+
+railway (
+    "Gleis6West"
+    (("Gleis7West" <-/ WL10) ("Gleis8West" <-/ WL15) (4 * D8) ("Gleis9West" <-/ DKW15 /<- "AbzweigAbstellgleise") (10 * D8) ("Gleis10West" <-/ DKW15 /<- "AbzweigAbstellgleise2") "AbzweigLaderampe") ->/ DKW10 /-> "Ablauf3"
+    "Ziehgleis"
+)
+
+railway (
+    "Gleis7"
+    2 * L20
+    2 * G4
+    G1 G05 G025
+    3 * RC20
+    5 * D8
+)
+
+railway (
+    "Gleis8"
+    RC9
+    G05
+    2 * LC10
+    G4 G4 G1 G1
+    R20
+    G025
+)
+
+railway (
+    "Gleis9"
+    G025
+    1 * LC10
+    G4 G4 G05
+    3 * D8
+    R20
+)
+
+railway (
+    "Gleis10"
+    3 * LC11
+    G4 G1 G1 G05 G025
+    R20
+)
+
+railway (
+    "Ablauf3"
+    3 * D8
+    4 * R10
+    2 * RC10
+    3 * R6
+)
+
+railway (
+    "Ziehgleis"
+    6 * RC15
+    6 * RC8
+    R5
+)
+
+railway (
+    "AbzweigAbstellgleise"
+    WR15 /-> "Abstellgleis1"
+    "Abstellgleis2"
+)
+
+railway (
+    "Abstellgleis1"
+    6 * RC20
+    G1
+)
+
+railway (
+    "Abstellgleis2"
+    1 * LC20
+    G05
+    4 * RC19
+    G1
+)
+
+railway (
+    "Abstellgleis3"
+    G05
+    2 * RC15
+    G1
+    4 * RC17
+    G1
+)
+
+railway (
+    "Abstellgleis4"
+    2 * LC10
+    G05
+    1 * RC9
+    G05 G025 2 * D8
+    4 * RC15
+    G1
+)
+
+railway (
+    "AbzweigLaderampe"
+    L20
+    WL15 /<- "AbzweigAbstellgleise3"
+    G1
+    WL15 /-> ("Laderampe2" <-/ WR15 "Laderampe3")
+    "Laderampe1"
+)
+
+railway (
+    "AbzweigAbstellgleise2"
+    WR15 /-> "Abstellgleis3"
+    "Abstellgleis4"
+)
+
+railway (
+    "AbzweigAbstellgleise3"
+    G1
+    2 * RC20
+    2 * G1
+)
+
+railway (
+    "Laderampe1"
+    1 * G1
+    G4
+    G4
+)
+
+railway (
+    "Laderampe2"
+    G4
+    G4
+)
+
+railway (
+    "Laderampe3"
+    G05
+    R9
+    3 * G1
+    G4
+)
+
+railway (
+    "Zulauf1"
+    3 * G4
+    L20
+    G4
+    R20
+    2 * G1
+    6 * R5
+)
+
+railway (
+    "Zulauf2"
+    3 * G4
+    L20
+    G4
+    R20
+    2 * G1
+    6 * R6
+)
+
+railway (
+    "Zulauf3"
+    3 * G4
+    L20
+    G4
+    R20
+    2 * G1
+    18 * RC7
+)
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 80 cm) (110 cm, 80 cm) (164 cm, 90 cm) (530 cm, 90 cm) (530 cm, 0 cm) (600 cm, 0 cm) (600 cm, 274 cm) (0 cm, 274 cm) 
+}
+
+ground {
+    Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 274 cm) (600 cm, 274 cm) (600 cm, 380 cm) (0 cm, 380 cm) (0 cm, 330 cm) (530 cm, 330 cm)
+}
