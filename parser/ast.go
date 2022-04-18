@@ -37,53 +37,65 @@ type Layer struct {
 }
 
 type RailWay struct {
-	Expressions []*Expression        `json:"exp"`
-	Layer       string               `json:"layer"`
-	Location    errlog.LocationRange `json:"-"`
+	Name     string
+	Rows     []*ExpressionRow     `json:"rows"`
+	Layer    string               `json:"layer"`
+	Location errlog.LocationRange `json:"-"`
 }
 
-type Expression struct {
-	Repeat         *RepeatExpression         `json:"repeat"`
-	Track          *TrackExpression          `json:"track"`
-	TrackMark      *TrackMarkExpression      `json:"mark"`
-	ConnectionMark *ConnectionMarkExpression `json:"con"`
-	Anchor         *AnchorExpression         `json:"anchor"`
-}
-
-type RepeatExpression struct {
-	Count            int           `json:"n"`
-	TrackExpressions []*Expression `json:"exp"`
-}
-
-type TrackExpression struct {
-	Type             string                `json:"t"`
-	JunctionsOnLeft  []*JunctionExpression `json:"jleft,omitempty"`
-	JunctionsOnRight []*JunctionExpression `json:"jright,omitempty"`
-	Location         errlog.LocationRange  `json:"-"`
-}
-
-type JunctionExpression struct {
-	Arrow       TokenKind     `json:"arrow"`
+type ExpressionRow struct {
 	Expressions []*Expression `json:"exp"`
 }
 
-type ConnectionMarkExpression struct {
-	Name     string               `json:"name"`
-	Location errlog.LocationRange `json:"-"`
+type Expression struct {
+	Placeholder      bool
+	TrackTermination *TrackTerminationExpression `json:"term"`
+	Switch           *SwitchExpression           `json:"switch"`
+	Repeat           *RepeatExpression           `json:"repeat"`
+	Track            *TrackExpression            `json:"track"`
+	TrackMark        *TrackMarkExpression        `json:"mark"`
+	Anchor           *AnchorExpression           `json:"anchor"`
+	Location         errlog.LocationRange        `json:"-"`
+}
+
+type SwitchExpression struct {
+	TrackExpression `json:"track"`
+	PositionLeft    int  `json:"posleft"`
+	JoinLeft        bool `json:"joinleft"`
+	SplitLeft       bool `json:"splitleft"`
+	PositionRight   int  `json:"posright"`
+	JoinRight       bool `json:"joinright"`
+	SplitRight      bool `json:"splitright"`
+}
+
+type RepeatExpression struct {
+	Count           int         `json:"n"`
+	TrackExpression *Expression `json:"exp"`
+}
+
+type TrackExpression struct {
+	Type string `json:"t"`
+	// A Token or a more complex expression
+	Parameters []interface{} `json:"params"`
 }
 
 type TrackMarkExpression struct {
-	Name     string               `json:"name"`
-	Position float32              `json:"pos"`
-	Location errlog.LocationRange `json:"-"`
+	Name     string  `json:"name"`
+	Position float32 `json:"pos"`
+}
+
+// In case of "end", EllipsisLeft and EllipsisRight are nil.
+type TrackTerminationExpression struct {
+	EllipsisLeft  bool
+	Name          string
+	EllipsisRight bool
 }
 
 type AnchorExpression struct {
-	X        float64              `json:"x"`
-	Y        float64              `json:"y"`
-	Z        float64              `json:"z"`
-	Angle    float64              `json:"a"`
-	Location errlog.LocationRange `json:"-"`
+	X     float64 `json:"x"`
+	Y     float64 `json:"y"`
+	Z     float64 `json:"z"`
+	Angle float64 `json:"a"`
 }
 
 func Load(data []byte) (*File, error) {

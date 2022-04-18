@@ -12,6 +12,34 @@ type SourceFile struct {
 	Name string
 }
 
+func (loc Location) Position() int {
+	pos := int(uint64(loc) & 0xffffffff)
+	return pos
+}
+
+func (loc Location) Line() int {
+	line := int((uint64(loc) & 0xffff00000000) >> 32)
+	return line
+}
+
+func (r LocationRange) File() int {
+	return int(uint64(r.From) >> 48)
+}
+
+func (r LocationRange) Position() int {
+	pos := int(uint64(r.From) & 0xffffffff)
+	return pos
+}
+
+func (r LocationRange) Line() int {
+	line := int((uint64(r.From) & 0xffff00000000) >> 32)
+	return line
+}
+
+func (loc Location) File() int {
+	return int(uint64(loc) >> 48)
+}
+
 func NewSourceFile(name string) *SourceFile {
 	return &SourceFile{Name: name}
 }

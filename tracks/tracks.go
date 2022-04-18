@@ -65,6 +65,13 @@ type TrackMark struct {
 
 type TrackFactoryFunc func(l *TrackLayer, id int) *Track
 
+const (
+	JunctionLeft   = "L-"
+	JunctionRight  = "R-"
+	JunctionDouble = "D-"
+	JunctionCross  = "K-"
+)
+
 // A map of all registered track factories.
 var TrackFactories map[string]TrackFactoryFunc = make(map[string]TrackFactoryFunc)
 

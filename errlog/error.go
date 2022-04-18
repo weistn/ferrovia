@@ -1,5 +1,7 @@
 package errlog
 
+import "fmt"
+
 // ErrorCode ...
 type ErrorCode int
 
@@ -15,10 +17,17 @@ const (
 	ErrorTrackConnectedTwice
 	ErrorTrackMarkDefinedTwice
 	ErrorTrackPositionedTwice
-	ErrorMismatchJunctionCount
-	ErrorIllegalJunction
 	ErrorDuplicateLayer
 	ErrorUnknownLayer
+	ErrorIllegalSwitchExpression
+	ErrorNoSwitchInSwitchExpression
+	ErrorNoTrackInRepeatExpression
+	ErrorColumnTerminatedUnexpectedly
+	ErrorColumnStartedUnexpectedly
+	ErrorColumnHasNoTracks
+	ErrorIllegalColumnCountInNamedRailway
+	ErrorIllegalStartEndColumnInNamedRailway
+	ErrorNamedRailwayUsedTwice
 	ErrorUnexpectedEOF
 	ErrorExpectedToken
 )
@@ -84,10 +93,24 @@ func (e *Error) ToString(log *ErrorLog) string {
 		return "Two layers of the same name `" + e.args[0] + "` defined"
 	case ErrorUnknownLayer:
 		return "Unknown layer `" + e.args[0] + "`"
-	case ErrorMismatchJunctionCount:
-		return "The number of connected tracks does not match the number of provided connections"
-	case ErrorIllegalJunction:
-		return "The junction is not allowed in this place"
+	case ErrorNoSwitchInSwitchExpression:
+		return "A switch expression requires a switch type"
+	case ErrorIllegalSwitchExpression:
+		return "A switch expression must be the only expression in a row"
+	case ErrorNoTrackInRepeatExpression:
+		return "A repeat expression requires a track type to repeat"
+	case ErrorColumnTerminatedUnexpectedly:
+		return fmt.Sprintf("The column at %v ended unexpectedly. Missing `end`?", e.location.Position())
+	case ErrorColumnStartedUnexpectedly:
+		return fmt.Sprintf("A new column started unexpectedly at %v. Missing `end` or wrong indentation?", e.location.Position())
+	case ErrorColumnHasNoTracks:
+		return fmt.Sprintf("The columns at %v has no tracks", e.location.Position())
+	case ErrorIllegalColumnCountInNamedRailway:
+		return "A named railway must have exactly one non-terminated column at the end"
+	case ErrorIllegalStartEndColumnInNamedRailway:
+		return "A named railway must start and end with the same column"
+	case ErrorNamedRailwayUsedTwice:
+		return fmt.Sprintf("The railway %v has been used twice", e.args[0])
 	case ErrorUnexpectedEOF:
 		return "Unexpected end of file"
 	}

@@ -97,6 +97,12 @@ func (p *Parser) parseLayer(t *Token) (*Layer, *errlog.Error) {
 func (p *Parser) parseRailway(t *Token) (*RailWay, *errlog.Error) {
 	rail := &RailWay{Location: t.Location}
 
+	// Parse optional name
+	if t, ok := p.optional(TokenIdentifier); ok {
+		rail.Name = t.StringValue
+	}
+
+	// Parse configutation values, e.g. "railway { ... }"
 	if _, ok := p.optional(TokenOpenBraces); ok {
 		if _, err := p.expect(TokenNewline); err != nil {
 			return nil, err
@@ -126,14 +132,47 @@ func (p *Parser) parseRailway(t *Token) (*RailWay, *errlog.Error) {
 			}
 		}
 	}
-	if p.peek(TokenOpenParanthesis) {
-		var err *errlog.Error
-		rail.Expressions, err = p.parseExpression()
-		return rail, err
+	// Parse rows, e.g. "railway ( ... )"
+	if _, err := p.expect(TokenOpenParanthesis); err != nil {
+		return nil, err
 	}
-	return nil, p.expectError(TokenOpenParanthesis)
+	if _, err := p.expect(TokenNewline); err != nil {
+		return nil, err
+	}
+	for {
+		if _, ok := p.optional(TokenCloseParanthesis); ok {
+			break
+		}
+		row, err := p.parseRow()
+		if err != nil {
+			return nil, err
+		}
+		if row != nil {
+			rail.Rows = append(rail.Rows, row)
+		}
+	}
+	return rail, nil
 }
 
+func (p *Parser) parseRow() (*ExpressionRow, *errlog.Error) {
+	row := &ExpressionRow{}
+	for {
+		if _, ok := p.optional(TokenNewline); ok {
+			break
+		}
+		exp, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		row.Expressions = append(row.Expressions, exp)
+	}
+	if len(row.Expressions) == 0 {
+		return nil, nil
+	}
+	return row, nil
+}
+
+/*
 func (p *Parser) parseExpressionList(t *Token) ([]*Expression, *errlog.Error) {
 	var expressions []*Expression
 	p.optional(TokenNewline)
@@ -149,39 +188,137 @@ func (p *Parser) parseExpressionList(t *Token) ([]*Expression, *errlog.Error) {
 	}
 	return expressions, nil
 }
+*/
 
-func (p *Parser) parseExpression() ([]*Expression, *errlog.Error) {
-	t, err := p.expectMulti(TokenIdentifier, TokenAt, TokenString, TokenInteger, TokenOpenParanthesis)
-	if err != nil {
-		return nil, err
+func (p *Parser) parseExpression() (*Expression, *errlog.Error) {
+	if p.peek(TokenAt) || p.peek(TokenEnd) || p.peek(TokenEllipsis) || p.peek(TokenPipe) {
+		return p.parseSimpleExpression()
 	}
-	if t.Kind == TokenOpenParanthesis {
-		exp, err := p.parseExpressionList(t)
+	//
+	// RepeatExpression
+	//
+	if t, ok := p.optional(TokenInteger); ok {
+		if !t.IntegerValue.IsInt64() {
+			return nil, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
+		}
+		count := t.IntegerValue.Int64()
+		if count < 0 || count >= 100 {
+			return nil, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
+		}
+		if _, err := p.expect(TokenAsterisk); err != nil {
+			return nil, err
+		}
+		exp, err := p.parseSimpleExpression()
 		if err != nil {
 			return nil, err
 		}
-		p.optional(TokenNewline)
-		return p.parseLeftJunctionExpression(exp)
+		rep := &Expression{Repeat: &RepeatExpression{Count: int(count), TrackExpression: exp}, Location: t.Location}
+		return rep, nil
 	}
-	if t.Kind == TokenIdentifier {
-		var junctionsRight []*JunctionExpression
-		for p.peek(TokenArrowRightIn) || p.peek(TokenArrowRightOut) {
-			j, err := p.parseRightJunctionExpression()
+	//
+	// TrackExpression, TrackTerminationExpression or SwitchExpression
+	//
+	t, switchok := p.optionalMulti(TokenSlash, TokenBackslash)
+	if switchok {
+		// Consume dashes
+		for {
+			if _, ok := p.optional(TokenDash); !ok {
+				break
+			}
+		}
+	}
+	exp, err := p.parseSimpleExpression()
+	if err != nil {
+		return nil, err
+	}
+	t2, switchok2 := p.optionalMulti(TokenSlash, TokenBackslash, TokenDash)
+	if switchok2 && t2.Kind == TokenDash {
+		// Consume dashes
+		for {
+			t2, err = p.expectMulti(TokenSlash, TokenBackslash, TokenDash)
 			if err != nil {
 				return nil, err
 			}
-			junctionsRight = append(junctionsRight, j)
+			if t2.Kind != TokenDash {
+				break
+			}
 		}
-		exp := &Expression{Track: &TrackExpression{Type: t.StringValue, JunctionsOnRight: junctionsRight, Location: t.Location}}
-		if len(junctionsRight) == 0 {
-			p.optional(TokenNewline)
-			return p.parseLeftJunctionExpression([]*Expression{exp})
+	}
+	if switchok || switchok2 {
+		// It is a switch expression
+		if exp.Track == nil {
+			p.log.LogError(errlog.ErrorNoSwitchInSwitchExpression, exp.Location)
 		}
-		return []*Expression{exp}, nil
-	} else if t.Kind == TokenString {
-		p.optional(TokenNewline)
-		exp := &Expression{ConnectionMark: &ConnectionMarkExpression{Name: t.StringValue, Location: t.Location}}
-		return p.parseLeftJunctionExpression([]*Expression{exp})
+		s := &SwitchExpression{TrackExpression: *exp.Track}
+		if switchok {
+			s.PositionLeft = t.Location.Position()
+			if t.Kind == TokenSlash {
+				s.SplitLeft = true
+			} else {
+				s.JoinLeft = true
+			}
+		}
+		if switchok2 {
+			s.PositionRight = t2.Location.Position()
+			if t2.Kind == TokenSlash {
+				s.JoinRight = true
+			} else {
+				s.SplitRight = true
+			}
+		}
+		return &Expression{Switch: s, Location: exp.Location}, nil
+	}
+	return exp, nil
+}
+
+func (p *Parser) parseSimpleExpression() (*Expression, *errlog.Error) {
+	t, err := p.expectMulti(TokenIdentifier, TokenEnd, TokenEllipsis, TokenAt, TokenString, TokenPipe, TokenInteger /*, TokenOpenParanthesis*/)
+	if err != nil {
+		return nil, err
+	}
+	/*
+		if t.Kind == TokenOpenParanthesis {
+			return p.parseExpressionList(t)
+		}
+	*/
+	if t.Kind == TokenPipe {
+		exp := &Expression{Placeholder: true, Location: t.Location}
+		return exp, nil
+	}
+	if t.Kind == TokenEllipsis {
+		ident, err := p.expect(TokenIdentifier)
+		if err != nil {
+			return nil, err
+		}
+		exp := &Expression{TrackTermination: &TrackTerminationExpression{Name: ident.StringValue, EllipsisLeft: true}, Location: t.Location}
+		return exp, nil
+	}
+	if t.Kind == TokenIdentifier {
+		exp := &Expression{Track: &TrackExpression{Type: t.StringValue}, Location: t.Location}
+		if _, ok := p.optional(TokenOpenParanthesis); ok {
+			for i := 0; ; i++ {
+				if _, ok := p.optional(TokenCloseParanthesis); ok {
+					break
+				}
+				if i != 0 {
+					if _, err := p.expect(TokenComma); err != nil {
+						return nil, err
+					}
+				}
+				p, err := p.parseParameter()
+				if err != nil {
+					return nil, err
+				}
+				exp.Track.Parameters = append(exp.Track.Parameters, p)
+			}
+		} else if _, ok := p.optional(TokenEllipsis); ok {
+			exp.TrackTermination = &TrackTerminationExpression{Name: exp.Track.Type, EllipsisRight: true}
+			exp.Track = nil
+		}
+		return exp, nil
+	} else if t.Kind == TokenEnd {
+		exp := &Expression{TrackTermination: &TrackTerminationExpression{}, Location: t.Location}
+		return exp, nil
 	} else if t.Kind == TokenAt {
 		if _, err := p.expect(TokenOpenParanthesis); err != nil {
 			return nil, err
@@ -215,9 +352,8 @@ func (p *Parser) parseExpression() ([]*Expression, *errlog.Error) {
 		if err != nil {
 			return nil, err
 		}
-		p.optional(TokenNewline)
-		exp := &Expression{Anchor: &AnchorExpression{X: x, Y: y, Z: z, Angle: a, Location: t.Location.Join(t2.Location)}}
-		return []*Expression{exp}, nil
+		exp := &Expression{Anchor: &AnchorExpression{X: x, Y: y, Z: z, Angle: a}, Location: t.Location.Join(t2.Location)}
+		return exp, nil
 	} else if t.Kind == TokenInteger {
 		if !t.IntegerValue.IsInt64() {
 			return nil, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
@@ -229,43 +365,22 @@ func (p *Parser) parseExpression() ([]*Expression, *errlog.Error) {
 		if _, err := p.expect(TokenAsterisk); err != nil {
 			return nil, err
 		}
-		exp, err := p.parseExpression()
+		exp, err := p.parseSimpleExpression()
 		if err != nil {
 			return nil, err
 		}
-		p.optional(TokenNewline)
-		rep := &Expression{Repeat: &RepeatExpression{Count: int(count), TrackExpressions: exp}}
-		return p.parseLeftJunctionExpression([]*Expression{rep})
+		if exp.Track == nil {
+			p.log.LogError(errlog.ErrorNoTrackInRepeatExpression, exp.Location)
+		}
+		rep := &Expression{Repeat: &RepeatExpression{Count: int(count), TrackExpression: exp}}
+		return rep, nil
 	}
 	panic("Oooops")
 }
 
-func (p *Parser) parseRightJunctionExpression() (*JunctionExpression, *errlog.Error) {
-	t, err := p.expectMulti(TokenArrowRightIn, TokenArrowRightOut)
-	if err != nil {
-		return nil, err
-	}
-	j := &JunctionExpression{Arrow: t.Kind}
-	j.Expressions, err = p.parseExpression()
-	return j, err
-}
-
-func (p *Parser) parseLeftJunctionExpression(exp []*Expression) ([]*Expression, *errlog.Error) {
-	t, ok := p.optionalMulti(TokenArrowLeftIn, TokenArrowLeftOut)
-	if !ok {
-		p.optional(TokenNewline)
-		return exp, nil
-	}
-	trackexp, err := p.parseExpression()
-	if err != nil {
-		return nil, err
-	}
-	if len(trackexp) != 1 || trackexp[0].Track == nil {
-		return nil, p.log.LogError(errlog.ErrorIllegalJunction, t.Location)
-	}
-	j := &JunctionExpression{Arrow: t.Kind, Expressions: exp}
-	trackexp[0].Track.JunctionsOnLeft = append([]*JunctionExpression{j}, trackexp[0].Track.JunctionsOnLeft...)
-	return trackexp, err
+func (p *Parser) parseParameter() (interface{}, *errlog.Error) {
+	// TODO
+	return p.expectMulti(TokenIdentifier, TokenInteger)
 }
 
 func (p *Parser) parseGround(t *Token) (*GroundPlate, *errlog.Error) {

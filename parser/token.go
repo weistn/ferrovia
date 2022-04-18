@@ -11,9 +11,7 @@ import (
 type TokenKind int
 
 const (
-	// TokenDot ...
-	TokenDot TokenKind = 1 + iota
-	TokenIdentifier
+	TokenIdentifier TokenKind = 1 + iota
 	TokenOctal
 	TokenHex
 	TokenInteger
@@ -23,9 +21,24 @@ const (
 	TokenLineComment
 	TokenBlockComment
 	TokenAsterisk
+	TokenSlash
+	TokenBackslash
+	TokenDash
+	TokenPipe
+	TokenAt
+	TokenOpenParanthesis
+	TokenCloseParanthesis
+	TokenOpenBraces
+	TokenCloseBraces
+	TokenComma
 
-	// TokenDivision ...
-	TokenDivision
+	TokenRailway
+	TokenGround
+	TokenLayer
+	TokenEnd
+
+	// TokenDot ...
+	TokenDot
 	// TokenAmpersand ...
 	TokenAmpersand
 	// TokenTilde ...
@@ -38,31 +51,17 @@ const (
 	TokenCaret
 	// TokenPlus ...
 	TokenPlus
-	// TokenMinus ...
-	TokenMinus
 	// TokenPercent ...
 	TokenPercent
 	// TokenLogicalOr ...
 	TokenLogicalOr
 	// TokenLogicalAnd ...
 	TokenLogicalAnd
-	// TokenBinaryOr ...
-	TokenBinaryOr
 	// TokenBitClear ...
 	TokenBitClear
 	TokenFalse
 	TokenTrue
 	TokenNull
-
-	TokenRailway
-	TokenGround
-	TokenLayer
-	TokenAt
-	TokenOpenParanthesis
-	TokenCloseParanthesis
-	TokenOpenBraces
-	TokenCloseBraces
-	TokenComma
 
 	TokenOpenBracket
 	// TokenCloseBracket ...
@@ -118,12 +117,7 @@ const (
 	// TokenEllipsis ...
 	TokenEllipsis
 
-	TokenEnd
 	TokenUnit
-	TokenArrowLeftIn
-	TokenArrowLeftOut
-	TokenArrowRightIn
-	TokenArrowRightOut
 
 	TokenNewline
 	TokenError

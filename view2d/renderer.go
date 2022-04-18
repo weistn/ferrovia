@@ -85,9 +85,9 @@ func renderTrack(track *tracks.Track, cl *Layer, c *Canvas) {
 			length := p.Size
 			t.Lines = append(t.Lines, &Line{X: from[0], Y: from[1], Angle: normalizeAngle(startAngle), Length: length})
 
-			to := from.Add2(tracks.Vec2{length, 0}.Rotate(startAngle))
-			c.Width = math.Max(math.Max(from[0], c.Width), to[0])
-			c.Height = math.Max(math.Max(from[1], c.Height), to[1])
+			to := from.Add2(tracks.Vec2{0, -length}.Rotate(startAngle))
+			c.Width = math.Max(math.Max(from[0]+100, c.Width), to[0]+100)
+			c.Height = math.Max(math.Max(from[1]+100, c.Height), to[1]+100)
 		case *tracks.TrackGeometryArc:
 			from := track.Location.Center.Add2(p.Anchor.Position.Rotate(track.Location.Rotation))
 			angle := track.Location.Rotation + p.Anchor.Angle

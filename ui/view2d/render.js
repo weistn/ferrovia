@@ -31,27 +31,29 @@ function renderCanvas(c, svgView, svgMeasure, svgGround, svgTracks) {
         svgMeasure.appendChild(svgText);
     }
 
-    for (ground of c.ground) {
-        if (ground.polygon) {
-            var svgPoly = document.createElementNS(svgNS, "polygon");
-            var points = [];
-            for (var p of ground.polygon) {
-                points.push((ground.left + p.x).toString() + "," + (ground.top + p.y).toString())
+    if (c.ground) {
+        for (ground of c.ground) {
+            if (ground.polygon) {
+                var svgPoly = document.createElementNS(svgNS, "polygon");
+                var points = [];
+                for (var p of ground.polygon) {
+                    points.push((ground.left + p.x).toString() + "," + (ground.top + p.y).toString())
+                }
+                svgPoly.setAttribute("points", points.join(" "));
+                svgPoly.classList.add("ground");
+                svgGround.appendChild(svgPoly);
+            } else {
+                var svgRect = document.createElementNS(svgNS, "rect");
+                svgRect.setAttribute("x", ground.left);
+                svgRect.setAttribute("y", ground.top);
+                svgRect.setAttribute("width", ground.width);
+                svgRect.setAttribute("height", ground.height);
+                svgRect.classList.add("ground");
+                svgGround.appendChild(svgRect);
             }
-            svgPoly.setAttribute("points", points.join(" "));
-            svgPoly.classList.add("ground");
-            svgGround.appendChild(svgPoly);
-        } else {
-            var svgRect = document.createElementNS(svgNS, "rect");
-            svgRect.setAttribute("x", ground.left);
-            svgRect.setAttribute("y", ground.top);
-            svgRect.setAttribute("width", ground.width);
-            svgRect.setAttribute("height", ground.height);
-            svgRect.classList.add("ground");
-            svgGround.appendChild(svgRect);
         }
     }
-
+    
     if (!c.layers) {
         c.layers = [];
     }
