@@ -159,6 +159,7 @@ func (b *Interpreter) processRailWay(ast *parser.RailWay) {
 					continue
 				}
 				b.processTrackTerminationWithConnection(exp, columns[index].last)
+				columns, _ = startOrEndColumnAtPosition(columns, exp.Location)
 			} else if exp.TrackTermination != nil {
 				// `end`. Terminate the column
 				// println("END at", exp.Location.Position())

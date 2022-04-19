@@ -1,0 +1,137 @@
+/********************
+ *
+ * Ausgang West
+ *
+ ********************/
+
+railway (
+    ... West1
+    3 * R6
+    G1
+    G05
+    R10
+    G1
+    L9
+    end
+)
+
+railway (
+    ... West2
+    3 * R5
+    G1
+    G05
+    R9
+    G1
+    L10
+    end
+)
+
+/********************
+ *
+ * Ausgang Ost
+ *
+ ********************/
+
+railway (
+    ... Ost1
+    9 * L6
+    end
+)
+
+railway (
+    ... Ost2
+    9 * L5
+    end
+)
+
+/********************
+ *
+ * Gleisvorfeld West
+ *
+ ********************/
+
+railway (
+                        ... West1
+                        @(6 cm, 145 cm, 0 mm, 180 deg)
+                        3 * LC7
+                        BW9-----------------\
+                        LC7                 LC7
+                        |                   2 * LC9
+                        |                   W10-------------\
+                        |                   Gleis4W ...     Gleis5W ...
+                        W10---------\
+                        4 * LC15    Gleis3W ...
+        ... AbstellRE3  |
+        |               |
+        \---------------W10---------\
+                        2 * LC9     Gleis2W ...
+    ... AbstellRE12     |
+    |                   |
+    W10-----------------/
+    |
+    Gleis1W ...
+
+    /*
+    BWL9 /-> (LC7 2 * LC9 (WL10 /-> "Gleis5West") "Gleis4West")
+    LC7 
+    (4 * LC15  "AbstellungRE3" ->/ DKW10 /-> "Gleis2West" (LC9 LC9 "AbstellungRE" ->/ WR10 "Gleis1West")) <-/ WL10
+    "Gleis3West" */
+)
+
+railway (
+    ... West2
+    @(12.1 cm, 145 cm, 0 mm, 180 deg)
+    5 * LC5
+    BW9-----\
+    end     LC5
+            BW9-----\
+            end     end
+    /*
+    BWL9 /-> (LC5 BWL9 /-> "GuetergleiseWest" "Gleis7West")
+    "Gleis6West" */
+)
+
+/********************
+ *
+ * Gleisvorfeld Ost
+ *
+ ********************/
+
+railway (
+            ... Ost1
+            @(586 cm, 65 cm, 0 mm, 180 deg)
+    /-------W10
+    end     end
+    /*
+    WR10 /-> (RC10 RC10 RC10 (WR10 /-> "Gleis3OstTMP") "Gleis4OstTMP") */
+)
+
+railway (
+    ... Ost2
+    @(579.9 cm, 65 cm, 0 mm, 180 deg)
+    2 * RC5
+    end
+    /*
+    WR10 /-> "Gleis6OstTMP"
+    G05
+    BWR9 /-> "Gleis7OstTMP"
+    "Gleis8OstTMP" */
+)
+
+/********************
+ *
+ * Grundplatte
+ *
+ ********************/
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 80 cm) (110 cm, 80 cm) (164 cm, 90 cm) (460 cm, 90 cm) (460 cm, 0 cm) (600 cm, 0 cm) (600 cm, 274 cm) (0 cm, 274 cm) 
+}
+
+ground {
+    Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 274 cm) (600 cm, 274 cm) (600 cm, 380 cm) (0 cm, 380 cm) (0 cm, 330 cm) (530 cm, 330 cm)
+}
