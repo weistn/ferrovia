@@ -6,6 +6,8 @@ github.com/weistn/goui v0.0.0-20220301235540-f47cdda3ae58 h1:OjZgmsEMZ9BIHfXZzar
 github.com/weistn/goui v0.0.0-20220301235540-f47cdda3ae58/go.mod h1:nzqwBLZlneqDu2XPABgXQhAkH18tgsXNqpeaTOE1eyQ=
 github.com/weistn/goui v0.0.0-20220914215015-d3bb96281888 h1:NwAAnSGGrdQD7o2YB8vfNxnd4/xpnVMD47OpaYcbyjs=
 github.com/weistn/goui v0.0.0-20220914215015-d3bb96281888/go.mod h1:nzqwBLZlneqDu2XPABgXQhAkH18tgsXNqpeaTOE1eyQ=
+github.com/weistn/goui v0.0.0-20220914220831-44ebf74d687d h1:6Wo+Hh+Wjdd5U66ewgJ9GTJ+lZvfGH0jkGDbiUtyXb0=
+github.com/weistn/goui v0.0.0-20220914220831-44ebf74d687d/go.mod h1:nzqwBLZlneqDu2XPABgXQhAkH18tgsXNqpeaTOE1eyQ=
 golang.org/x/net v0.0.0-20220225172249-27dd8689420f h1:oA4XRj0qtSt8Yo1Zms0CUlsT3KG69V2UGQWPBxujDmc=
 golang.org/x/net v0.0.0-20220225172249-27dd8689420f/go.mod h1:CfG3xpIq0wQ8r1q4Su4UZFWDARRcnwPjda9FqA0JpMk=
 golang.org/x/net v0.0.0-20220909164309-bea034e7d591 h1:D0B/7al0LLrVC8aWF4+oxpv/m8bc7ViFfVS8/gXGdqI=
