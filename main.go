@@ -4,8 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
-	"mime"
 	"net/http"
 	"os"
 
@@ -16,12 +16,17 @@ import (
 	"github.com/weistn/ferrovia/tracks"
 	"github.com/weistn/ferrovia/view2d"
 	"github.com/weistn/goui"
+
+	"embed"
 )
 
 type WindowAPI struct {
 }
 
-var server *goui.Window
+//go:embed ui
+var uiFS embed.FS
+
+var window *goui.Window
 
 func loadFile(name string) (*tracks.TrackSystem, error) {
 	data, err := ioutil.ReadFile(name)
@@ -56,7 +61,7 @@ func showFile(filename string) error {
 	ts.Name = "Demo"
 	canvas := view2d.Render(ts)
 
-	if err := server.SendEvent("canvas", canvas); err != nil {
+	if err := window.SendEvent("canvas", canvas); err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		return err
 	}
@@ -80,13 +85,16 @@ func main() {
 	// Open UI in browser
 	//
 
-	mime.AddExtensionType(".css", "text/css")
-
 	remote := &WindowAPI{}
 
-	server = goui.NewWindow("/", remote, nil)
-	server.Handle("/", http.FileServer(http.Dir("./ui")))
-	err := server.Start()
+	window = goui.NewWindow("/", remote, nil)
+	// window.Handle("/", http.FileServer(http.Dir("./ui")))
+	subfs, err := fs.Sub(uiFS, "ui")
+	if err != nil {
+		panic("Embedding failed")
+	}
+	window.Handle("/", http.FileServer(http.FS(subfs)))
+	err = window.Start()
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		return
@@ -128,5 +136,5 @@ func main() {
 
 	}()
 
-	server.Wait()
+	window.Wait()
 }
