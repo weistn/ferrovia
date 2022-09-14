@@ -1,0 +1,131 @@
+
+/********************
+ *
+ * Spindel Ost
+ *
+ ********************/
+
+railway (
+    end
+    @(526 cm, 10.1 cm, 0 mm, 90 deg)
+    3 * R6
+    Ost1 ...
+)
+
+railway (
+    end
+    3 * R5
+    Ost2 ...
+)
+
+/********************
+ *
+ * RE rund um Spindel Ost
+ *
+ ********************/
+
+railway (
+    end
+    18 * RC7
+    RE_Ost ...
+)
+
+/********************
+ *
+ * Gleisvorfeld Ost
+ *
+ ********************/
+
+railway (
+                            ...Ost2
+                            |                                   ... Ost1                    ... RE_Ost
+    /-----------------------W10                                 |                           G1
+    |                       |           /-----------------------W10                         G1
+    Gleis6 ...              |           |                       |                           G1
+                /-----------W10---------/                       W10-------------\           |  
+                |           |                                   |               |           |
+                Gleis5 ...  |                                   |               \-----------W10--------------\
+                            |                                   Gleis2...                   |                | 
+                /-----------BW9                                                             Gleis1b...       |
+                |           |                                                                                Gleis1...
+                Gleis4 ...  Gleis3 ...
+)
+
+railway (
+    ... Gleis1
+    6 * R9
+    2 * RC20
+    3 * G4
+    end
+)
+
+railway (
+    ... Gleis1b
+    5 * D8
+    6 * R10
+    G4
+    3 * G1
+    end
+)
+
+railway (
+    ... Gleis2
+    18 * RC15
+    3 * G4
+    end
+)
+
+railway (
+    ... Gleis3
+    2 * D8
+    12 * RC17
+    3 * G4
+    end
+)
+
+railway (
+    ... Gleis4
+    12 * RC15
+    3 * G4
+    end
+)
+
+railway (
+    ... Gleis5
+    2 * D8
+    16 * RC14
+    3 * G4
+    end
+)
+
+railway (
+    ... Gleis6
+    2 * D8
+    G1
+    16 * RC14
+    end
+)
+
+/********************
+ *
+ * Grundplatte
+ *
+ ********************/
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 70 cm) (110 cm, 70 cm) (164 cm, 80 cm) (530 cm, 80 cm) (530 cm, 0 cm) (600 cm, 0 cm) (600 cm, 385 cm) (530 cm, 385 cm) (530 cm, 274 cm) (0 cm, 274 cm) 
+}
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 0 cm) (530 cm, 30 cm) (340 cm, 30 cm) (285 cm, 80 cm) (255 cm, 80 cm) (255 cm, 0 cm) 
+}
+
+ground {
+    Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 335 cm) (530 cm, 385 cm) (0 cm, 385 cm) (0 cm, 335 cm)
+}

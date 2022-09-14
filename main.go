@@ -126,7 +126,7 @@ ground {
 type ServerAPI struct {
 }
 
-var server *goui.HTTPServer
+var server *goui.WebUI
 
 func loadFile(name string) (*tracks.TrackSystem, error) {
 	data, err := ioutil.ReadFile(name)
@@ -140,14 +140,14 @@ func loadFile(name string) (*tracks.TrackSystem, error) {
 	file := p.Parse(fileId, string(data))
 	if log.HasErrors() {
 		log.Print()
-		return nil, errors.New("Parsing Error")
+		return nil, errors.New("parsing Error")
 	}
 
 	b := interpreter.NewInterpreter(log)
 	ts := b.Process(file)
 	if log.HasErrors() {
 		log.Print()
-		return nil, errors.New("Interpreter error")
+		return nil, errors.New("interpreter error")
 	}
 
 	return ts, nil
@@ -210,13 +210,11 @@ func main() {
 
 	mime.AddExtensionType(".css", "text/css")
 
-	mux := http.NewServeMux()
-	// Serve content
-	mux.Handle("/", http.FileServer(http.Dir("./ui")))
 
 	remote := &ServerAPI{}
 
-	server = goui.NewHTTPServer("/", mux, remote, nil)
+	server = goui.NewWebUI("/", remote, nil)
+	server.Handle("/", http.FileServer(http.Dir("./ui")))
 	err := server.Start()
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())

@@ -40,6 +40,7 @@ railway (
 
 railway (
     ... Ost2
+    4 * D8
     9 * L5
     end
 )
@@ -62,33 +63,24 @@ railway (
                         W10---------\
                         4 * LC15    Gleis3W ...
         ... AbstellRE3  |
-        |               |
+        D8              |
         \---------------W10---------\
                         2 * LC9     Gleis2W ...
     ... AbstellRE12     |
-    |                   |
+    D8                  |
     W10-----------------/
     |
     Gleis1W ...
-
-    /*
-    BWL9 /-> (LC7 2 * LC9 (WL10 /-> "Gleis5West") "Gleis4West")
-    LC7 
-    (4 * LC15  "AbstellungRE3" ->/ DKW10 /-> "Gleis2West" (LC9 LC9 "AbstellungRE" ->/ WR10 "Gleis1West")) <-/ WL10
-    "Gleis3West" */
 )
 
 railway (
     ... West2
     @(12.1 cm, 145 cm, 0 mm, 180 deg)
     5 * LC5
-    BW9-----\
-    end     LC5
-            BW9-----\
-            end     end
-    /*
-    BWL9 /-> (LC5 BWL9 /-> "GuetergleiseWest" "Gleis7West")
-    "Gleis6West" */
+    BW9-------------\
+    Gleis6W ...     LC5
+                    BW9-------------\
+                    Gleis7W ...     GueterW ...
 )
 
 /********************
@@ -98,26 +90,416 @@ railway (
  ********************/
 
 railway (
-            ... Ost1
-            @(586 cm, 65 cm, 0 mm, 180 deg)
-    /-------W10
-    end     end
-    /*
-    WR10 /-> (RC10 RC10 RC10 (WR10 /-> "Gleis3OstTMP") "Gleis4OstTMP") */
+                            ... Ost1
+                            //@(586 cm, 65 cm, 0 mm, 180 deg)
+    /-----------------------W10
+    Gleis5O ...             |
+                            3 * RC10
+            /---------------W10
+            Gleis4O ...     Gleis3O ... 
 )
 
 railway (
-    ... Ost2
-    @(579.9 cm, 65 cm, 0 mm, 180 deg)
-    2 * RC5
-    end
-    /*
-    WR10 /-> "Gleis6OstTMP"
-    G05
-    BWR9 /-> "Gleis7OstTMP"
-    "Gleis8OstTMP" */
+                        ... Ost2
+                        // @(579.9 cm, 65 cm, 0 mm, 180 deg)
+                        2 * RC5
+            /-----------W10
+            G05         Gleis6O ...
+    /-------BW9
+    |       Gleis7O ...
+    |
+    GueterO ...
 )
 
+/********************
+ *
+ * Personengleise Nebenbahn
+ *
+ ********************/
+
+railway (
+    ... Gleis1W
+    2 * G4
+    end
+)
+
+railway (
+    ... Gleis2W
+    2 * LC40
+    2 * G4
+    end
+)
+
+/********************
+ *
+ * Personengleise von West nach Ost
+ *
+ ********************/
+
+railway (
+    ... Gleis3W
+    D8
+    G025
+    4 * D8
+    6 * LC20
+    2 * G4
+    2 * G1
+    7 * LC40
+    2 * LC24
+    // LC24
+    // 5 * D8
+    3 * LC7
+    3 * LC7
+    Gleis3O ...
+)
+
+railway (
+    ... Gleis4W
+    6 * LC18
+    2 * G4
+    2 * G1
+    3 * D8
+    7 * LC39
+    LC23
+    2 * LC18
+    3 * LC10
+    Gleis4O ...
+)
+
+railway (
+    ... Gleis5W
+    4 * LC20
+    2 * G4
+    2 * G1
+    G05
+    G025
+    3 * D8
+    7 * LC37
+    G05
+    5 * D8
+    9 * LC13
+    G05
+    2 * D8
+    Gleis5O ...
+)
+
+/********************
+ *
+ * Personengleise von Ost nach West
+ *
+ ********************/
+
+railway (
+    ... Gleis6W
+    2 * LC9
+    G025
+    3 * D8
+    2 * LC16
+    2 * D8
+    3 * LC16
+    2 * G4
+    2 * G1
+    G1
+    4 * D8
+    7 * LC36
+    G05
+    2 * D8
+    2 * LC10
+    1 * LC10
+    G025
+    6 * LC10
+    G025
+    Gleis6O ...
+)
+
+railway (
+    ... Gleis7
+    3 * D8
+    G025
+    3 * G4
+    4 * LC30
+    G1
+    G025
+    4 * LC28
+    D8
+    Gleis7O ...
+)
+
+/********************
+ *
+ * Abstellung Personenwagen
+ *
+ ********************/
+
+railway (
+                            ... AbstellRE12
+                            |
+    /-----------------------W15
+    |                       |
+    AbstellRE2 ...          |
+                            AbstellRE1 ...
+)
+
+railway (
+    ... AbstellRE1
+    8 * RC17
+    G1
+    G05
+    end
+)
+
+railway (
+    ... AbstellRE2
+    G1
+    G05
+    D8
+    5 * RC16
+    G1
+    G05
+    end
+)
+
+railway (
+    ... AbstellRE3
+    6 * RC15
+    G1
+    G05
+    end
+)
+
+/********************
+ *
+ * Guetergleise Gabelung West
+ *
+ ********************/
+
+railway (
+    ... GueterW
+    LC5
+    W10-------------------------------------\
+    RC10                                    |
+    Gleis8W ...                             |
+                                            |
+            /-------------------------------W15
+            |                               G05
+            W15-------------\               |
+            Gleis9W ...     Gleis10W ...    |
+                                            |
+                            /---------------W10
+                            Gleis11W ...    Gleis12W ...
+)
+
+/********************
+ *
+ * Guetergleise Gabelung Ost
+ *
+ ********************/
+
+railway (
+                                            ... GueterO
+                                            2 * RC7
+                            ... Zuggleis    3 * RC30
+                            G1              |
+                            \---------------W10-----------------\
+                                            |                   Gleis8O ...
+                                    /-------W10
+                                    |       Gleis9O ...
+                                    |
+                            /-------W15
+                            |       Gleis10O ...
+    ... GueterAbstell1      |
+    R10                     |
+    \-----------------------W10-----\
+                            |       Gleis11O ...
+                            |
+    ... GueterAbstell23     |
+    D8                      |
+    \-----------------------W10-----\
+                            |       Gleis12O ...
+    ... Loks                |
+    |                       |
+    W10---------------------/
+    |
+    Verladung ...
+)
+
+/********************
+ *
+ * Guetergleise Verladung
+ *
+ ********************/
+
+railway (
+                    ... Verladung
+                    2 * G1
+        /-----------W15         
+        |           Verladung1 ...
+        G05
+        W15-----------------\
+        Verladung3 ...      Verladung2 ...
+)
+
+railway (
+    ... Verladung1
+    G4
+    2 * G1
+    end
+)
+
+railway (
+    ... Verladung2
+    G4
+    G05
+    end
+)
+
+railway (
+    ... Verladung3
+    L10
+    3 * G1
+    G05
+    end
+)
+
+/********************
+ *
+ * Guetergleise Abstellung
+ *
+ ********************/
+
+railway (
+    ... GueterAbstell23
+    |
+    W15-------------\
+    |               GueterAbstell3 ...
+    |
+    GueterAbstell2 ...
+)
+
+railway (
+    ... GueterAbstell1
+    2 * L20
+    3 * G1
+    end
+)
+
+railway (
+    ... GueterAbstell2
+    5 * LC6
+    G4
+    G05
+    end
+)
+
+railway (
+    ... GueterAbstell3
+    2 * LC10
+    G4
+    G05
+    G025
+    end
+)
+
+/********************
+ *
+ * Rangierlok Abstellung
+ *
+ ********************/
+
+railway (
+    ... Loks
+    L10
+    W15---------------------\
+    Lok1 ...                Lok2 ...
+)
+
+railway (
+    ... Lok1
+    2 * L20
+    G1
+    G025
+    end
+)
+
+railway (
+    ... Lok2
+    R20
+    2 * G1
+    end
+)
+
+/********************
+ *
+ * Zuggleis
+ *
+ ********************/
+
+railway (
+    ... Zuggleis
+    3 * LC20
+    7 * LC10
+    G1
+    G05
+    end
+)
+
+/********************
+ *
+ * Guetergleise
+ *
+ ********************/
+
+railway (
+    ... Gleis8W
+    2 * G4
+    2 * G1
+    G05
+    2 * LC20
+    3 * LC20
+    G025
+    2 * D8
+    end
+)
+
+railway (
+    ... Gleis9W
+    2 * G4
+    G05
+    G025
+    6 * D8
+    2 * LC10
+    LC30
+    D2
+    Gleis9O ...
+)
+
+railway (
+    ... Gleis10W
+    R10
+    2 * G4
+    6 * D8
+    LC5
+    Gleis10O ...
+)
+
+railway (
+    ... Gleis11W
+    RC10
+    G4
+    2 * G1
+    G05
+    5 * D8
+    Gleis11O ...
+)
+
+railway (
+    ... Gleis12W
+    R10
+    G4
+    G05
+    D8
+    Gleis12O ...
+)
 /********************
  *
  * Grundplatte

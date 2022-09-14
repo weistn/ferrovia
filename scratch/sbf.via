@@ -1,0 +1,137 @@
+
+/********************
+ *
+ * Spindel Ost
+ *
+ ********************/
+
+railway (
+    end
+    @(526 cm, 10.1 cm, 0 mm, 90 deg)
+    3 * R6
+    Ost1 ...
+)
+
+railway (
+    end
+    @(526 cm, 16.2 cm, 0 mm, 90 deg)
+    3 * R5
+    Ost2 ...
+)
+
+/********************
+ *
+ * Gleisvorfeld Ost
+ *
+ ********************/
+
+railway (
+                            ... Ost1
+                            //@(586 cm, 65 cm, 0 mm, 180 deg)
+    /-----------------------W10
+    Gleis5O ...             |
+                            3 * RC10
+            /---------------W10
+            Gleis4O ...     Gleis3O ... 
+)
+
+railway (
+                        ... Ost2
+                        // @(579.9 cm, 65 cm, 0 mm, 180 deg)
+                        2 * RC5
+            /-----------W10
+            G05         Gleis6O ...
+    /-------BW9
+    |       Gleis7O ...
+    |
+    GueterO ...
+)
+
+
+/********************
+ *
+ * Gleisvorfeld West
+ *
+ ********************/
+
+
+/********************
+ *
+ * Personengleise von Spindel West nach Spindel Ost
+ *
+ ********************/
+
+railway (
+    ... Gleis3W
+    2 * G4
+    2 * G1
+    9 * LC26
+    3 * LC9
+    3 * LC7
+    Gleis3O ...
+)
+
+railway (
+    ... Gleis4W
+    2 * G4
+    2 * G1
+    1 * D8
+    8 * LC28
+    1 * LC12
+    4 * LC10
+    Gleis4O ...
+)
+
+/********************
+ *
+ * RE von Ost nach West
+ *
+ ********************/
+
+railway (
+                                                ... Ost
+                                                @(526 cm, 4 cm, 0 mm, 90 deg)
+                                                18 * RC7
+                                                G1
+                                                G05
+                                                2 * RC40
+        /---------------------------------------BW9
+        RC25                                    |
+        |                   /-------------------W10
+        9 * RC24            G1                  10 * RC16
+        G4                  8 * RC14            G4
+        G4                  G4                  G4
+        G4                  3 * G1              G4
+        2 * G1              end                 3 * G1
+        G1                                      G05
+        3 * D8                                  |
+        12 * RC8                                6 * R10
+        7 * RC8                                 18 * RC12
+        17 * RC11                               R10
+        R9                                      |
+        end                                     end
+)
+
+/********************
+ *
+ * Grundplatte
+ *
+ ********************/
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 70 cm) (110 cm, 70 cm) (164 cm, 80 cm) (530 cm, 80 cm) (530 cm, 0 cm) (600 cm, 0 cm) (600 cm, 385 cm) (530 cm, 385 cm) (530 cm, 274 cm) (0 cm, 274 cm) 
+}
+
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 0 cm) (530 cm, 30 cm) (340 cm, 30 cm) (285 cm, 80 cm) (255 cm, 80 cm) (255 cm, 0 cm) 
+}
+
+ground {
+    Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 335 cm) (530 cm, 385 cm) (0 cm, 385 cm) (0 cm, 335 cm)
+}
