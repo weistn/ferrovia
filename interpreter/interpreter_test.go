@@ -34,6 +34,7 @@ var data string = `{"statements":[
 	}}
 ]}`
 
+/*
 var data2 string = `{"statements":[
 	{"way":{
 		"exp": [
@@ -45,6 +46,7 @@ var data2 string = `{"statements":[
 		]
 	}}
 ]}`
+*/
 
 func TestInterpreter(t *testing.T) {
 	tracks.InitRoco()
@@ -54,7 +56,7 @@ func TestInterpreter(t *testing.T) {
 	}
 	e := errlog.NewErrorLog()
 	b := NewInterpreter(e)
-	ts := b.Process(file)
+	ts, _ := b.Process(file)
 	if ts == nil {
 		t.Fatal("No track system")
 	}

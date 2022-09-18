@@ -1,6 +1,8 @@
 package interpreter
 
 import (
+	"strings"
+
 	"github.com/weistn/ferrovia/errlog"
 	"github.com/weistn/ferrovia/parser"
 	"github.com/weistn/ferrovia/tracks"
@@ -11,6 +13,7 @@ type Interpreter struct {
 	ast              *parser.File
 	trackSystem      *tracks.TrackSystem
 	tracksWithAnchor []*tracks.Track
+	layouts          []*Layout
 	namedRailways    map[string]*namedRailway
 }
 
@@ -32,7 +35,7 @@ func NewInterpreter(errlog *errlog.ErrorLog) *Interpreter {
 	return &Interpreter{errlog: errlog, namedRailways: make(map[string]*namedRailway)}
 }
 
-func (b *Interpreter) Process(ast *parser.File) *tracks.TrackSystem {
+func (b *Interpreter) Process(ast *parser.File) (*tracks.TrackSystem, []*Layout) {
 	b.trackSystem = tracks.NewTrackSystem()
 	b.ast = ast
 	for _, s := range ast.Statements {
@@ -45,6 +48,8 @@ func (b *Interpreter) Process(ast *parser.File) *tracks.TrackSystem {
 			b.processLayer(s.Layer)
 		} else if s.RailWay != nil && s.RailWay.Name != "" {
 			b.namedRailways[s.RailWay.Name] = &namedRailway{ast: s.RailWay}
+		} else if s.Layout != nil {
+			b.processLayout(s.Layout)
 		}
 	}
 
@@ -60,6 +65,9 @@ func (b *Interpreter) Process(ast *parser.File) *tracks.TrackSystem {
 			b.processRailWay(s.RailWay)
 		} else if s.RailWay != nil {
 			// Do nothing by intention
+		} else if s.Layout != nil {
+			// TODO
+			println(s.Layout.RawText)
 		} else {
 			panic("Oooops")
 		}
@@ -80,7 +88,14 @@ func (b *Interpreter) Process(ast *parser.File) *tracks.TrackSystem {
 		}
 	}
 
-	return b.trackSystem
+	return b.trackSystem, b.layouts
+}
+
+func (b *Interpreter) processLayout(ast *parser.Layout) {
+	lines := strings.Split(ast.RawText, "\n")
+	layout := NewLayout(lines, ast.LocationText)
+	layout.Process(b.errlog)
+	b.layouts = append(b.layouts, layout)
 }
 
 func (b *Interpreter) processLayer(ast *parser.Layer) {
@@ -248,7 +263,7 @@ func (b *Interpreter) checkForUnmarkedColumms(columns []*railwayColumn) {
 }
 
 func (b *Interpreter) processSwitchExpression(rail *parser.RailWay, exp *parser.Expression, columns []*railwayColumn, index int) (columnsNew []*railwayColumn, first *tracks.TrackConnection, last *tracks.TrackConnection) {
-	trackType := exp.Switch.Type
+	var trackType string
 	if exp.Switch.JoinRight && !exp.Switch.JoinLeft && !exp.Switch.SplitLeft {
 		trackType = tracks.JunctionRight + exp.Switch.Type
 	} else if exp.Switch.JoinLeft && !exp.Switch.JoinRight && !exp.Switch.SplitRight {

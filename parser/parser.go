@@ -26,7 +26,7 @@ func (p *Parser) Parse(fileId int, str string) *File {
 
 func (p *Parser) parseFile(f *File) {
 	for {
-		t, err := p.expectMulti(TokenRailway, TokenGround, TokenEOF, TokenNewline)
+		t, err := p.expectMulti(TokenRailway, TokenGround, TokenEOF, TokenNewline, TokenIdentifier)
 		if err != nil {
 			p.log.AddError(err)
 			return
@@ -55,6 +55,16 @@ func (p *Parser) parseFile(f *File) {
 				return
 			}
 			f.Statements = append(f.Statements, &Statement{GroundPlate: ground})
+		} else if t.Kind == TokenIdentifier {
+			if t.StringValue == "layout" {
+				l, err := p.parseLayout(t)
+				if err != nil {
+					return
+				}
+				f.Statements = append(f.Statements, &Statement{Layout: l})
+			} else {
+				p.log.LogError(errlog.ErrorUnknownDirective, t.Location, t.StringValue)
+			}
 		} else if t.Kind == TokenEOF {
 			break
 		} else {
@@ -465,6 +475,19 @@ func (p *Parser) parseGroundPolygon() ([]GroundPoint, *errlog.Error) {
 	}
 }
 
+func (p *Parser) parseLayout(t *Token) (l *Layout, err *errlog.Error) {
+	_, err = p.expect(TokenOpenParanthesis)
+	if err != nil {
+		return
+	}
+	str, lstr := p.l.ScanRawText(')')
+	_, err = p.expect(TokenCloseParanthesis)
+	if err != nil {
+		return
+	}
+	return &Layout{RawText: str, LocationToken: t.Location, LocationText: lstr}, nil
+}
+
 func (p *Parser) expect(tokenKind TokenKind) (*Token, *errlog.Error) {
 	t := p.scan()
 	if t.Kind != tokenKind {
@@ -524,6 +547,7 @@ func (p *Parser) scan() *Token {
 	return p.l.Scan()
 }
 
+/*
 func (p *Parser) expectError(tokenKind ...TokenKind) *errlog.Error {
 	t := p.scan()
 	var str = []string{t.Raw}
@@ -533,6 +557,7 @@ func (p *Parser) expectError(tokenKind ...TokenKind) *errlog.Error {
 	err := p.log.LogError(errlog.ErrorExpectedToken, t.Location, str...)
 	return err
 }
+*/
 
 func (p *Parser) expectConstantWithLengthUnit() (value float64, err *errlog.Error) {
 	t, err := p.expectMulti(TokenInteger, TokenFloat)

@@ -30,13 +30,15 @@ const (
 	ErrorNamedRailwayUsedTwice
 	ErrorUnexpectedEOF
 	ErrorExpectedToken
+	ErrorUnknownDirective
+	ErrorMalformedLayout
 )
 
 type Error struct {
-	code      ErrorCode
-	location  LocationRange
-	args      []string
-	locations []LocationRange
+	code     ErrorCode
+	location LocationRange
+	args     []string
+	//	locations []LocationRange
 }
 
 func NewError(code ErrorCode, loc LocationRange, args ...string) *Error {
@@ -73,6 +75,8 @@ func (e *Error) ToString(log *ErrorLog) string {
 		return "The mark " + e.args[0] + " has been defined twice on the same track"
 	case ErrorTrackPositionedTwice:
 		return "More than one position has been defined for the track"
+	case ErrorUnknownDirective:
+		return "Unknown directive " + e.args[0]
 	case ErrorExpectedToken:
 		str := "`" + e.args[1] + "`"
 		if e.args[1] == "\n" || e.args[1] == "\r\n" {
@@ -113,6 +117,8 @@ func (e *Error) ToString(log *ErrorLog) string {
 		return fmt.Sprintf("The railway %v has been used twice", e.args[0])
 	case ErrorUnexpectedEOF:
 		return "Unexpected end of file"
+	case ErrorMalformedLayout:
+		return "Malformed layout: " + e.args[0]
 	}
 	println(e.code)
 	panic("Should not happen")

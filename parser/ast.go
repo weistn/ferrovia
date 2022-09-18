@@ -15,6 +15,7 @@ type Statement struct {
 	Layer       *Layer       `json:"layer"`
 	RailWay     *RailWay     `json:"way"`
 	GroundPlate *GroundPlate `json:"ground"`
+	Layout      *Layout      `json:"layout"`
 }
 
 type GroundPlate struct {
@@ -29,6 +30,12 @@ type GroundPlate struct {
 type GroundPoint struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
+}
+
+type Layout struct {
+	RawText  string
+	LocationToken errlog.LocationRange `json:"-"`
+	LocationText errlog.LocationRange `json:"-"`
 }
 
 type Layer struct {

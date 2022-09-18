@@ -3,7 +3,7 @@ const cellWidth = 20;
 const cellHeight = 20;
 
 
-function trackInit() {
+function trackDiagramInit() {
     new TrackDiagram(80, 30);
 }
 
@@ -58,8 +58,7 @@ class TrackDiagram {
     }
 
     // Reconstructs a TrackDiagram from its JSON serialization.
-    static deserialize(json) {
-        var ser = JSON.deserialize(json);
+    static deserialize(ser) {
         var dgrm = new TrackDiagram(ser.columns, ser.rows);
         
         // Deserialize all tracks and attach them to their cell
@@ -136,7 +135,11 @@ class TrackDiagramCell {
             this.setTrack(track);
             return
         }
-        this.track.push(track);
+        if (Array.isArray(this.track)) {
+            this.track.push(track);
+        } else {
+            this.track = [this.track, track];
+        }
         track.createSVG(this.svg);
     }
 

@@ -1,6 +1,10 @@
 package parser
 
-import "github.com/weistn/ferrovia/errlog"
+import (
+	"bytes"
+
+	"github.com/weistn/ferrovia/errlog"
+)
 
 // Lexer ...
 type Lexer struct {
@@ -113,7 +117,7 @@ func (l *Lexer) Scan() *Token {
 	for {
 		l.skipWhitespace()
 		if l.pos == len(l.str) {
-			token = &Token{Kind: TokenEOF}
+			token = &Token{Kind: TokenEOF, Location: encodeRange(l.file, l.str, l.pos, l.pos)}
 			break
 		}
 		token, l.pos = l.t.scan(l.file, l.str, l.pos)
@@ -140,6 +144,51 @@ func (l *Lexer) skipLineComment() {
 			break
 		}
 	}
+}
+
+// This function is used to scan ASCII-Art text, until it encounters a new line that starts with the character 'term'.
+// The function expands tabulators, assuming a tab-width of 4 characters.
+func (l *Lexer) ScanRawText(term byte) (string, errlog.LocationRange) {
+	l.skipWhitespace()
+	if l.pos == len(l.str) {
+		return "", encodeRange(l.file, l.str, l.pos, l.pos)
+
+	}
+	if l.str[l.pos] == '\n' {
+		l.pos++
+	}
+	newline := true
+	start := l.pos
+	end := start
+	linepos := 0
+	tab := "    "
+	var buf bytes.Buffer
+	// var buf bytes.Buffer
+	for ; l.pos < len(l.str); l.pos++ {
+		ch := l.str[l.pos]
+		if ch == '\n' {
+			newline = true
+			linepos = 0
+			end = l.pos
+			buf.WriteByte(ch)
+		} else if ch == '\r' {
+			continue
+		} else if newline && ch == term {
+			break
+		} else if ch == ' ' {
+			linepos++
+			buf.WriteByte(ch)
+		} else if ch == '\t' {
+			off := linepos % 4
+			linepos += 4 - off
+			buf.WriteString(tab[:4-off])
+		} else {
+			linepos++
+			buf.WriteByte(ch)
+			newline = false
+		}
+	}
+	return buf.String(), encodeRange(l.file, l.str, start, end)
 }
 
 func (l *Lexer) skipBlockComment() {

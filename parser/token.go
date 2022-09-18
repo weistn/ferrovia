@@ -180,7 +180,7 @@ func (t *tokenizer) polish() {
 
 func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 	if len(str) == i {
-		loc := t.encodeRange(file, str, i-1, i)
+		loc := encodeRange(file, str, i-1, i)
 		return &Token{Kind: TokenEOF, Location: loc}, i
 	}
 	ch := str[i]
@@ -199,10 +199,10 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 			ident = "new[]"
 		}
 		if td, ok := t.identifiers[ident]; ok {
-			token := &Token{Kind: td.kind, StringValue: ident, Location: t.encodeRange(file, str, i, j)}
+			token := &Token{Kind: td.kind, StringValue: ident, Location: encodeRange(file, str, i, j)}
 			return token, j
 		}
-		return &Token{Kind: TokenIdentifier, StringValue: ident, Location: t.encodeRange(file, str, i, j)}, j
+		return &Token{Kind: TokenIdentifier, StringValue: ident, Location: encodeRange(file, str, i, j)}, j
 	}
 	// Hex number
 	if ch == '0' && i+1 < len(str) && str[i+1] == 'x' {
@@ -210,7 +210,7 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 		ch = str[j]
 		if j >= len(str) || ((ch < '0' || ch > '9') && (ch < 'a' || ch > 'f')) {
 			j2 := t.skipIdentifierOrNumber(str, j)
-			loc := t.encodeRange(file, str, j, j2)
+			loc := encodeRange(file, str, j, j2)
 			return t.errorToken(errlog.ErrorIllegalNumber, loc), j2
 		}
 		for ; j < len(str); j++ {
@@ -224,13 +224,13 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 			// No identifier must follow a number without a space in between
 			if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' {
 				j2 := t.skipIdentifierOrNumber(str, j)
-				loc := t.encodeRange(file, str, j, j2)
+				loc := encodeRange(file, str, j, j2)
 				return t.errorToken(errlog.ErrorIllegalNumber, loc), j2
 			}
 		}
 		value := new(big.Int)
 		value.SetString(str[i+2:j], 16)
-		return &Token{Kind: TokenHex, IntegerValue: value, Location: t.encodeRange(file, str, i, j)}, j
+		return &Token{Kind: TokenHex, IntegerValue: value, Location: encodeRange(file, str, i, j)}, j
 	}
 	// Octal number
 	if ch == '0' && i+1 < len(str) && (str[i+1] >= '0' && str[i+1] <= '7') {
@@ -246,13 +246,13 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 			// No identifier must follow a number without a space in between
 			if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '8' && ch <= '9') || ch == '_' {
 				j2 := t.skipIdentifierOrNumber(str, j)
-				loc := t.encodeRange(file, str, j, j2)
+				loc := encodeRange(file, str, j, j2)
 				return t.errorToken(errlog.ErrorIllegalNumber, loc), j2
 			}
 		}
 		value := new(big.Int)
 		value.SetString(str[i+1:j], 8)
-		token := &Token{Kind: TokenOctal, IntegerValue: value, Location: t.encodeRange(file, str, i, j)}
+		token := &Token{Kind: TokenOctal, IntegerValue: value, Location: encodeRange(file, str, i, j)}
 		return token, j
 	}
 	// Number ...
@@ -291,18 +291,18 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 			// No identifier must follow a number without a space in between
 			if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' {
 				j2 := t.skipIdentifierOrNumber(str, j)
-				loc := t.encodeRange(file, str, j, j2)
+				loc := encodeRange(file, str, j, j2)
 				return t.errorToken(errlog.ErrorIllegalNumber, loc), j2
 			}
 		}
 		if isFloat {
 			value := new(big.Float)
 			value.SetString(str[i:j])
-			return &Token{Kind: TokenFloat, FloatValue: value, Location: t.encodeRange(file, str, i, j)}, j
+			return &Token{Kind: TokenFloat, FloatValue: value, Location: encodeRange(file, str, i, j)}, j
 		}
 		value := new(big.Int)
 		value.SetString(str[i:j], 10)
-		return &Token{Kind: TokenInteger, IntegerValue: value, Location: t.encodeRange(file, str, i, j)}, j
+		return &Token{Kind: TokenInteger, IntegerValue: value, Location: encodeRange(file, str, i, j)}, j
 	}
 	if ch == '"' {
 		value := make([]byte, 0, 100)
@@ -316,7 +316,7 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 				k, s, _, ok := t.scanEscapeSequence(str, j+1)
 				if !ok {
 					j2 := t.skipString(str, j)
-					loc := t.encodeRange(file, str, j, j2)
+					loc := encodeRange(file, str, j, j2)
 					return t.errorToken(errlog.ErrorIllegalString, loc), j2
 				}
 				j = k
@@ -327,10 +327,10 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 		}
 		if ch != '"' {
 			j2 := t.skipString(str, j)
-			loc := t.encodeRange(file, str, j, j2)
+			loc := encodeRange(file, str, j, j2)
 			return t.errorToken(errlog.ErrorIllegalString, loc), j2
 		}
-		token := &Token{Kind: TokenString, StringValue: string(value), Location: t.encodeRange(file, str, i, j+1)}
+		token := &Token{Kind: TokenString, StringValue: string(value), Location: encodeRange(file, str, i, j+1)}
 		return token, j + 1
 	}
 	if ch == '\'' {
@@ -341,7 +341,7 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 			k, _, v, ok := t.scanEscapeSequence(str, j+1)
 			if !ok {
 				j2 := t.skipRune(str, j)
-				loc := t.encodeRange(file, str, j, j2)
+				loc := encodeRange(file, str, j, j2)
 				return t.errorToken(errlog.ErrorIllegalRune, loc), j2
 			}
 			j = k
@@ -352,10 +352,10 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 		j++
 		if j == len(str) || str[j] != '\'' {
 			j2 := t.skipRune(str, j)
-			loc := t.encodeRange(file, str, j, j2)
+			loc := encodeRange(file, str, j, j2)
 			return t.errorToken(errlog.ErrorIllegalRune, loc), j2
 		}
-		token := &Token{Kind: TokenRune, RuneValue: value, Location: t.encodeRange(file, str, i, j+1)}
+		token := &Token{Kind: TokenRune, RuneValue: value, Location: encodeRange(file, str, i, j+1)}
 		return token, j + 1
 	}
 	// An operator
@@ -369,11 +369,11 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 			}
 		}
 		if match {
-			token := &Token{Kind: td.kind, StringValue: td.str, Location: t.encodeRange(file, str, i, i+len(td.str))}
+			token := &Token{Kind: td.kind, StringValue: td.str, Location: encodeRange(file, str, i, i+len(td.str))}
 			return token, i + len(td.str)
 		}
 	}
-	loc := t.encodeRange(file, str, i, i+1)
+	loc := encodeRange(file, str, i, i+1)
 	return t.errorToken(errlog.ErrorIllegalCharacter, loc), i + 1
 }
 
@@ -491,7 +491,7 @@ func (t *tokenizer) skipRune(str string, i int) (pos int) {
 	return i
 }
 
-func (t *tokenizer) encodeRange(file int, str string, from int, to int) errlog.LocationRange {
+func encodeRange(file int, str string, from int, to int) errlog.LocationRange {
 	var line = 1
 	var pos = 1
 	for i := 0; i < from; i++ {

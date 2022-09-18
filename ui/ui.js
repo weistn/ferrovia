@@ -4,7 +4,8 @@ const svgNS = "http://www.w3.org/2000/svg";
 async function init() {
     // Install event listeners before connecting to the server.
     go.addEventListener("canvas", (data) => {renderCanvas(data, document.getElementById("view2d"), document.getElementById("view2d-measure"), document.getElementById("view2d-ground"), document.getElementById("view2d-tracks"))});
-
+    go.addEventListener("layout", (data) => {TrackDiagram.deserialize(data);})
+    
     document.getElementById("select-switchtower").addEventListener("click", () => {
         document.getElementById("trackdiagram").style.display = "block";
         document.getElementById("view2d").style.display = "none";

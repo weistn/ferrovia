@@ -1,0 +1,249 @@
+layout (
+        |         @
+    @---/-----@   |
+                  |
+         @--\-@   |
+            |     @
+
+  @-------/------@
+  @------//------@
+  @------/-------@
+
+|             |
+`-------------'
+ ,------------.
+,%------------&.
+||            ||
+
+----.
+    `.
+     `------
+)
+
+/********************
+ *
+ * Nebenbahn Bhf Ausfahrt Ost
+ *
+ ********************/
+
+railway (
+    end
+    @(480 cm, 375 cm, 0 mm, 90 deg)
+    L6
+    7 * L9
+    1 * LC9
+    OstSuedHarfe ...
+)
+
+railway (
+    ... OstSuedHarfe
+    BW9-------------\
+    |               OstSuedDurchfahrt ...
+    OstSuedPersonen ...
+)
+
+railway (
+                    ... OstSuedPersonen
+    ... Gleis2b     |
+    6 * L10         |
+    1 * G1          |
+    3 * L6          G05
+    3 * G1          |
+    \---------------W10---------\
+                    G05         Gleis2a ...
+                    Gleis1 ...         
+)
+
+railway (
+                    ... Gleis1a
+                    |
+    /---------------W10
+    |               |
+    Gleis1 ...      |
+                    Gleis1b ...
+)
+
+railway (
+    ... Gleis2a
+    2 * G4
+    3 * G1
+    G05
+    end
+)
+
+railway (
+    ... Gleis1a
+    2 * G4
+    3 * G1
+    end
+)
+
+railway (
+    ... Gleis1b
+    G4
+    end
+)
+
+/*
+railway (
+    ... Gleis2b
+    3 * G1
+    end
+)
+*/
+
+railway (
+    ... OstSuedDurchfahrt
+    2 * LC10
+    W10-------------\
+    Gleis3 ...      |
+                    Gleis4 ...
+)
+
+railway (
+                    ... Gleis3
+                    2 * G4      
+                    3 * G1      end
+    end             W10---------/
+    2 * LC40        G1
+    \---------------W10
+                    2 * R9
+                    2 * R10
+                    4 * R6
+                    end
+)
+
+railway (
+    ... Gleis4
+    2 * R20
+    G4              
+    G1                          end
+    3 * G1                      2 * G4
+    |                           2 * G1
+    |               /-----------W10
+    |               |           2 * G1
+    |               |           3 * LC40
+    |               |           G4
+    |               |           end
+    |               |
+    \---------------W10-------------------------\
+                    end                         G05
+                                                4 * D8
+                                                3 * LC40
+                                                G4
+                                                end
+)
+
+/*
+railway (
+                    ... Bergstrecke
+                    3 * R20
+                    G1
+                    2 * L20
+                    3 * G4
+                    2 * R20
+                    R10
+                    G1
+                    8 * L5
+                    3 * L20
+                    10 * RC22
+                    G4
+                    2 * G1
+                    3 * R20
+                    3 * G1
+                    G05
+                    8 * L5
+                    2 * R20
+/-------------------BW9
+R20                 G1   
+2 * G4              RC40
+2 * L20             |
+end                 1 * G4
+                    4 * G1
+                    |
+end                 |
+\-------------------W10
+                    4 * RC20 
+                    4 * R10
+                    2 * R20
+                    2 * G1
+                    6 * R10
+                    end
+)
+*/
+
+/********************
+ *
+ * Kehrtunnel Neubaustrecke
+ *
+ ********************/
+
+railway (
+    ... Neubau1
+    @(535 cm, 5 cm, 0 mm, 90 deg)
+    3 * R6
+    2 * G4
+    6 * R10
+    Ost1 ...
+)
+
+railway (
+    ... Neubau2
+    @(535 cm, 11.1 cm, 0 mm, 90 deg)
+    3 * R5
+    2 * G4
+    6 * R9
+    Ost2 ...
+)
+
+/********************
+ *
+ * Neubaustrecke
+ *
+ ********************/
+
+railway (
+    ... Neubau1
+    5 * L6
+    2 * G1
+    4 * R5
+    2 * R9
+    4 * G4
+    2 * G1
+    3 * R9
+    3 * R5
+    end
+)
+
+railway (
+    ... Neubau2
+    5 * L5
+    2 * G1
+    4 * R6
+    2 * R10
+    4 * G4
+    2 * G1
+    3 * R10
+    3 * R6
+    end
+)
+
+/********************
+ *
+ * Grundplatten
+ *
+ ********************/
+
+/* Hauptplatte */
+ground {
+	Top: 0 cm
+	Left: 0 cm
+	Polygon: (0 cm, 70 cm) (110 cm, 70 cm) (164 cm, 80 cm) (470 cm, 80 cm) (470 cm, 0 cm) (600 cm, 0 cm) (600 cm, 385 cm) (530 cm, 385 cm) (530 cm, 264 cm) (0 cm, 264 cm) 
+}
+
+/* Lange Wand */
+ground {
+    Top: 0 cm
+	Left: 0 cm
+	Polygon: (530 cm, 335 cm) (530 cm, 385 cm) (0 cm, 385 cm) (0 cm, 335 cm)
+}

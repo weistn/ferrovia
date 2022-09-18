@@ -15,6 +15,7 @@ import (
 	"github.com/weistn/ferrovia/parser"
 	"github.com/weistn/ferrovia/tracks"
 	"github.com/weistn/ferrovia/view2d"
+	"github.com/weistn/ferrovia/viewlayout"
 	"github.com/weistn/goui"
 
 	"embed"
@@ -23,15 +24,25 @@ import (
 type WindowAPI struct {
 }
 
+var demodata string = `{
+"tracks": [
+	{"c": 5, "r": 5, "kind": 20},
+	{"c": 6, "r": 5, "kind": 20},
+	{"c": 7, "r": 5, "kind": 20}
+],
+"columns": 20,
+"rows": 20
+}`
+
 //go:embed ui
 var uiFS embed.FS
 
 var window *goui.Window
 
-func loadFile(name string) (*tracks.TrackSystem, error) {
+func loadFile(name string) (*tracks.TrackSystem, []*interpreter.Layout, error) {
 	data, err := ioutil.ReadFile(name)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	log := errlog.NewErrorLog()
@@ -40,28 +51,34 @@ func loadFile(name string) (*tracks.TrackSystem, error) {
 	file := p.Parse(fileId, string(data))
 	if log.HasErrors() {
 		log.Print()
-		return nil, errors.New("parsing Error")
+		return nil, nil, errors.New("parsing Error")
 	}
 
 	b := interpreter.NewInterpreter(log)
-	ts := b.Process(file)
+	ts, layouts := b.Process(file)
 	if log.HasErrors() {
 		log.Print()
-		return nil, errors.New("interpreter error")
+		return nil, nil, errors.New("interpreter error")
 	}
 
-	return ts, nil
+	return ts, layouts, nil
 }
 
 func showFile(filename string) error {
-	ts, err := loadFile(filename)
+	ts, layouts, err := loadFile(filename)
 	if err != nil {
 		return err
 	}
 	ts.Name = "Demo"
-	canvas := view2d.Render(ts)
 
+	canvas := view2d.Render(ts)
 	if err := window.SendEvent("canvas", canvas); err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		return err
+	}
+
+	layout := viewlayout.Render(layouts)
+	if err = window.SendEvent("layout", layout); err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		return err
 	}

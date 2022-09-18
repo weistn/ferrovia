@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/fsnotify/fsnotify v1.5.4
-	github.com/weistn/goui v0.0.0-20220914221340-05637bf56cdd
+	github.com/weistn/goui v0.0.0-20220915001116-85aa1fadcc54
 )
 
 require (

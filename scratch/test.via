@@ -1,83 +1,9 @@
-railway (
-    "Einfahrt"
-    @(120 mm, 0 mm, 0 mm, 180 deg)
-    G1
-    G1
-    "Ausfahrt"
+layout (
+							|-------- Gleis 1a ------------BBBB------------------------\--- Gleis 1b ----|
+							/-------- Gleis 2 -------------BBBB-------------------------\\--- Ost --------> Tiefbahnhof 
+Berg <------- West --------/-\------- Gleis 3 ----------------------------------------/---\-- Sued -------\
+		|--- Abstell 1 -------\\----- Gleis 4 ---------------------------------------/					   \
+		|--- Abstell 2 ---------\----- Gleis 5 ----------------------------|							   |
+																										   |
+								----------------------------------------------------------------------.----/
 )
-
-railway (
-	"Ausfahrt"
-    3 * L6
-	WL15 /-> G4
-	G1 ->/ WL15
-	"weiter" <-/ WL15
-	WL10 /-> G1
-	G1 <-/ WR10
-)
-
-railway (
-	"weiter"
-	G1
-	G1 ->/ DKW15 /-> G1
-	G1 ->/ DKW10 /-> G1
-)
-
-railway (
-    @(900 mm, 0 mm, 0 mm, 180 deg)
-	BWR5 /-> 2 * R5
-	2 * R5
-)
-
-railway (
-    @(1500 mm, 0 mm, 0 mm, 180 deg)
-	BWL5 /-> 2 * L5
-	2 * L5
-)
-
-railway (
-    @(1200 mm, 0 mm, 0 mm, 180 deg)
-	L5
-	BWL5 /-> "Innen"
-	L6
-)
-
-railway (
-	L5
-	L5
-	"Innen" ->/ BWR5
-)
-
-railway (
-    @(2000 mm, 0 mm, 0 mm, 180 deg)
-	2 * L9
-	BWL9 /-> "Innen2"
-	2 * L10
-)
-
-railway (
-	4 * L9
-	"Innen2" ->/ BWR9
-)
-
-ground {
-    Top: 0 mm
-    Left: 0 mm
-    Width: 200 cm
-    Height: 194 cm
-}
-
-/*
-ground {
-    Top: 100 mm
-    Left: 230 cm
-    Width: 250 cm
-    Height: 184 cm
-}
-*/
-
-ground {
-	Top: 0 cm
-	Left: 200 cm
-	Polygon: (0 cm, 0 cm) (30 cm, 10 cm) (270 cm, 10 cm) (270 cm, 194 cm) (0 cm, 194 cm) 
-}
