@@ -66,11 +66,14 @@ const (
 )
 
 const (
-	switchHorizontalSlash LayoutCellType = 100 + iota
-	switchVerticalSlash
-	switchHorizontalBackslash
-	switchVerticalBackslash
-	TrackDoubleBackslash
+	switchHorizontalSlash     LayoutCellType = 256
+	switchVerticalSlash       LayoutCellType = 512
+	switchHorizontalBackslash LayoutCellType = 1024
+	switchVerticalBackslash   LayoutCellType = 2048
+)
+
+const (
+	TrackDoubleBackslash LayoutCellType = iota + 3000
 	TrackDoubleSlash
 )
 
@@ -89,6 +92,7 @@ type LayoutCell struct {
 	Rune        rune
 	X           int
 	Y           int
+	Anchor      *LayoutCell
 }
 
 func NewLayout(lines []string, loc errlog.LocationRange) *Layout {
@@ -148,6 +152,7 @@ func (l *Layout) CellLeftOf(x int, y int) *LayoutCell {
 
 func (l *Layout) Process(log *errlog.ErrorLog) {
 	l.errlog = log
+	// Create lines of cells
 	var cellLines [][]*LayoutCell
 	for y := 0; y < l.LineCount; y++ {
 		var cellLine []*LayoutCell
@@ -157,6 +162,7 @@ func (l *Layout) Process(log *errlog.ErrorLog) {
 		cellLines = append(cellLines, cellLine)
 	}
 
+	// Create columns of cells
 	var cellColumns [][]*LayoutCell
 	for x := 0; x < l.ColumnCount; x++ {
 		var cellColumn []*LayoutCell
@@ -166,6 +172,8 @@ func (l *Layout) Process(log *errlog.ErrorLog) {
 		cellColumns = append(cellColumns, cellColumn)
 	}
 
+	// Determine the meaning of symbols such as / \ @, which have to be interpreted by their surrounding cells.
+	// Use symbols of known meaning like - | as a starting point and process neighbouring cells from there.
 	for y := 0; y < l.LineCount; y++ {
 		for x := 0; x < l.ColumnCount; x++ {
 			cell := l.Cell(x, y)
@@ -189,21 +197,37 @@ func (l *Layout) Process(log *errlog.ErrorLog) {
 			case ',':
 				cell.Type = TrackDiagonalLower
 				cell.Connections = ConnectBottom | ConnectRight
+				l.processCells(cellLines[y], x, scanRight)
+				l.processCells(cellColumns[x], y, scanDownwards)
 			case '.':
 				cell.Type = TrackDiagonalBackLower
 				cell.Connections = ConnectBottom | ConnectLeft
+				l.processCells(cellLines[y], x, scanLeft)
+				l.processCells(cellColumns[x], y, scanDownwards)
 			case '`':
 				cell.Type = TrackDiagonalBackUpper
 				cell.Connections = ConnectTop | ConnectRight
+				l.processCells(cellLines[y], x, scanRight)
+				l.processCells(cellColumns[x], y, scanUpwards)
 			case '\'':
 				cell.Type = TrackDiagonalUpper
 				cell.Connections = ConnectTop | ConnectLeft
+				l.processCells(cellLines[y], x, scanLeft)
+				l.processCells(cellColumns[x], y, scanUpwards)
 			case '%':
 				cell.Type = TrackDoubleSlash
 				cell.Connections = ConnectTop | ConnectRight | ConnectBottom | ConnectRight
+				l.processCells(cellLines[y], x, scanLeft)
+				l.processCells(cellLines[y], x, scanRight)
+				l.processCells(cellColumns[x], y, scanUpwards)
+				l.processCells(cellColumns[x], y, scanDownwards)
 			case '&':
 				cell.Type = TrackDoubleBackslash
 				cell.Connections = ConnectTop | ConnectRight | ConnectBottom | ConnectRight
+				l.processCells(cellLines[y], x, scanLeft)
+				l.processCells(cellLines[y], x, scanRight)
+				l.processCells(cellColumns[x], y, scanUpwards)
+				l.processCells(cellColumns[x], y, scanDownwards)
 			case 0:
 				// Do nothing by intention
 			default:
@@ -221,41 +245,49 @@ func (l *Layout) Process(log *errlog.ErrorLog) {
 			cell := l.Cell(x, y)
 			switch cell.Type {
 			case switchHorizontalBackslash:
-				println("------------ back")
 				if cell_above := l.CellAbove(x, y); cell_above != nil && cell_above.ConnectsToBottom() {
-					println("above back")
-					cell.Connections |= ConnectTop
+					cell.Connections = ConnectTop | ConnectLeft | ConnectRight
 					cell.Type = SwitchHorizontalDiagonalBackUpper
-				}
-				if cell_below := l.CellBelow(x, y); cell_below != nil && cell_below.ConnectsToTop() {
-					println("below back")
-					cell.Connections |= ConnectBottom
-					cell.Type = SwitchHorizontalDiagonalLower
-				}
-				if cell.ConnectsToTop() && cell.ConnectsToBottom() {
-					l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too many connections")
-				} else if !cell.ConnectsToTop() && !cell.ConnectsToBottom() {
+				} else if cell_below := l.CellBelow(x, y); cell_below != nil && cell_below.ConnectsToTop() {
+					cell.Connections |= ConnectBottom | ConnectLeft | ConnectRight
+					cell.Type = SwitchHorizontalDiagonalBackLower
+				} else {
 					l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too few connections")
 				}
 			case switchHorizontalSlash:
-				println("------------ slash")
 				if cell_above := l.CellAbove(x, y); cell_above != nil && cell_above.ConnectsToBottom() {
-					println("above")
 					cell.Connections = ConnectTop | ConnectLeft | ConnectRight
 					cell.Type = SwitchHorizontalDiagonalUpper
-				}
-				if cell_below := l.CellBelow(x, y); cell_below != nil && cell_below.ConnectsToTop() {
-					println("below")
+				} else if cell_below := l.CellBelow(x, y); cell_below != nil && cell_below.ConnectsToTop() {
 					cell.Connections = ConnectBottom | ConnectLeft | ConnectRight
 					cell.Type = SwitchHorizontalDiagonalLower
-				}
-				if cell.ConnectsToTop() && cell.ConnectsToBottom() {
-					l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too many connections")
-				} else if !cell.ConnectsToTop() && !cell.ConnectsToBottom() {
+				} else {
 					l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too few connections")
 				}
 			case switchVerticalBackslash:
+				if cell_left := l.CellLeftOf(x, y); cell_left != nil && cell_left.ConnectsToRight() {
+					cell.Connections = ConnectTop | ConnectBottom | ConnectRight
+					cell.Type = SwitchVerticalDiagonalBackLower
+				} else if cell_right := l.CellRightOf(x, y); cell_right != nil && cell_right.ConnectsToLeft() {
+					cell.Connections = ConnectBottom | ConnectLeft | ConnectTop
+					cell.Type = SwitchVerticalDiagonalBackUpper
+				} else {
+					l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too few connections")
+				}
 			case switchVerticalSlash:
+				if cell_left := l.CellLeftOf(x, y); cell_left != nil && cell_left.ConnectsToRight() {
+					cell.Connections = ConnectTop | ConnectBottom | ConnectRight
+					cell.Type = SwitchVerticalDiagonalUpper
+				} else if cell_right := l.CellRightOf(x, y); cell_right != nil && cell_right.ConnectsToLeft() {
+					cell.Connections = ConnectBottom | ConnectLeft | ConnectTop
+					cell.Type = SwitchVerticalDiagonalLower
+				} else {
+					l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too few connections")
+				}
+			case switchHorizontalSlash | switchVerticalSlash:
+				l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too many connections")
+			case switchHorizontalBackslash | switchVerticalBackslash:
+				l.addError(errlog.ErrorMalformedLayout, x, y, "Switch has too many connections")
 			}
 		}
 	}
@@ -286,32 +318,34 @@ func (l *Layout) processCells(cells []*LayoutCell, pos int, dir scanDirection) {
 	case '.', ',', '`', '\'', '&', '%':
 		return
 	case '/':
-		if dir == scanRight && i+1 < len(cells) && (cells[i+1].Rune == '/' || cells[i+1].Rune == '-' || cells[i+1].Rune == '\'' || cells[i+1].Rune == '.') {
-			cell.Type = switchHorizontalSlash
-			cell.Connections |= ConnectLeft | ConnectRight | ConnectTop | ConnectBottom
+		if dir == scanRight && i+1 < len(cells) && (cells[i+1].Rune == '/' || cells[i+1].Rune == '-' || cells[i+1].Rune == '\'' || cells[i+1].Rune == '.' || cells[i+1].Rune == '&' || cells[i+1].Rune == '%') {
+			cell.Type |= switchHorizontalSlash
 			l.processCells(cells, i, dir)
-		} else if dir == scanLeft && i > 0 && (cells[i-1].Rune == '/' || cells[i-1].Rune == '-' || cells[i-1].Rune == ',' || cells[i+1].Rune == '`') {
-			cell.Type = switchHorizontalSlash
-			cell.Connections |= ConnectLeft | ConnectRight | ConnectTop | ConnectBottom
+		} else if dir == scanLeft && i > 0 && (cells[i-1].Rune == '/' || cells[i-1].Rune == '-' || cells[i-1].Rune == ',' || cells[i-1].Rune == '`' || cells[i-1].Rune == '&' || cells[i-1].Rune == '%') {
+			cell.Type |= switchHorizontalSlash
 			l.processCells(cells, i, dir)
-		} else if dir == scanDownwards && i+1 < len(cells) && (cells[i+1].Rune == '/' || cells[i+1].Rune == '|' || cells[i+1].Rune == '\'' || cells[i+1].Rune == '`') {
-			cell.Type = switchVerticalSlash
-			cell.Connections |= ConnectTop | ConnectBottom | ConnectLeft | ConnectRight
+		} else if dir == scanDownwards && i+1 < len(cells) && (cells[i+1].Rune == '/' || cells[i+1].Rune == '|' || cells[i+1].Rune == '\'' || cells[i+1].Rune == '`' || cells[i+1].Rune == '&' || cells[i+1].Rune == '%') {
+			cell.Type |= switchVerticalSlash
 			l.processCells(cells, i, dir)
-		} else if dir == scanUpwards && i > 0 && (cells[i-1].Rune == '/' || cells[i-1].Rune == '|' || cells[i-1].Rune == '.' || cells[i+1].Rune == ',') {
-			cell.Type = switchVerticalSlash
-			cell.Connections |= ConnectTop | ConnectBottom | ConnectLeft | ConnectRight
+		} else if dir == scanUpwards && i > 0 && (cells[i-1].Rune == '/' || cells[i-1].Rune == '|' || cells[i-1].Rune == '.' || cells[i-1].Rune == ',' || cells[i-1].Rune == '&' || cells[i-1].Rune == '%') {
+			cell.Type |= switchVerticalSlash
 			l.processCells(cells, i, dir)
 		}
 		return
 	case '\\':
-		if dir == scanRight || dir == scanLeft {
-			println("!!!!!!!!!!!!!!!! \\")
-			cell.Type = switchHorizontalBackslash
-		} else {
-			cell.Type = switchVerticalBackslash
+		if dir == scanRight && i+1 < len(cells) && (cells[i+1].Rune == '\\' || cells[i+1].Rune == '-' || cells[i+1].Rune == '\'' || cells[i+1].Rune == '.' || cells[i+1].Rune == '&' || cells[i+1].Rune == '%') {
+			cell.Type |= switchHorizontalBackslash
+			l.processCells(cells, i, dir)
+		} else if dir == scanLeft && i > 0 && (cells[i-1].Rune == '\\' || cells[i-1].Rune == '-' || cells[i-1].Rune == ',' || cells[i-1].Rune == '`' || cells[i-1].Rune == '&' || cells[i-1].Rune == '%') {
+			cell.Type |= switchHorizontalBackslash
+			l.processCells(cells, i, dir)
+		} else if dir == scanDownwards && i+1 < len(cells) && (cells[i+1].Rune == '\\' || cells[i+1].Rune == '|' || cells[i+1].Rune == '\'' || cells[i+1].Rune == '`' || cells[i+1].Rune == '&' || cells[i+1].Rune == '%') {
+			cell.Type |= switchVerticalBackslash
+			l.processCells(cells, i, dir)
+		} else if dir == scanUpwards && i > 0 && (cells[i-1].Rune == '\\' || cells[i-1].Rune == '|' || cells[i-1].Rune == '.' || cells[i-1].Rune == ',' || cells[i-1].Rune == '&' || cells[i-1].Rune == '%') {
+			cell.Type |= switchVerticalBackslash
+			l.processCells(cells, i, dir)
 		}
-		l.processCells(cells, i, dir)
 		return
 	case '@':
 		if cell.Type != UnprocessedCell {
@@ -333,7 +367,8 @@ func (l *Layout) processCells(cells []*LayoutCell, pos int, dir scanDirection) {
 		return
 	default:
 		if cell.Type != UnprocessedCell {
-			l.addError(errlog.ErrorMalformedLayout, cell.X, cell.Y, " has more than one track connection")
+			return
+			// l.addError(errlog.ErrorMalformedLayout, cell.X, cell.Y, " has more than one track connection")
 		}
 		if cell.Rune == 'B' {
 			if (dir == scanDownwards || dir == scanRight) && i+4 < len(cells) && cells[i+1].Rune == 'B' && cells[i+2].Rune == 'B' && cells[i+3].Rune == 'B' && !unicode.IsLetter(cells[i+4].Rune) && !unicode.IsDigit(cells[i+4].Rune) {
@@ -392,13 +427,16 @@ func makeLabel(cells []*LayoutCell, kind LayoutCellType) {
 }
 
 func makeBlock(cells []*LayoutCell, kind LayoutCellType) {
-	for _, c := range cells {
+	for i, c := range cells {
 		if kind == TrackHorizontalBlock {
 			c.Connections = ConnectLeft | ConnectRight
 		} else {
 			c.Connections = ConnectTop | ConnectBottom
 		}
 		c.Type = kind
+		if i > 0 {
+			c.Anchor = cells[0]
+		}
 	}
 }
 
@@ -413,4 +451,12 @@ func (c *LayoutCell) ConnectsToTop() bool {
 
 func (c *LayoutCell) ConnectsToBottom() bool {
 	return c.Connections&ConnectBottom == ConnectBottom
+}
+
+func (c *LayoutCell) ConnectsToLeft() bool {
+	return c.Connections&ConnectLeft == ConnectLeft
+}
+
+func (c *LayoutCell) ConnectsToRight() bool {
+	return c.Connections&ConnectRight == ConnectRight
 }

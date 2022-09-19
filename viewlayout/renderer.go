@@ -26,7 +26,9 @@ func Render(layouts []*interpreter.Layout) *LayoutDescription {
 		for y := 0; y < layout.LineCount; y++ {
 			for x := 0; x < layout.ColumnCount; x++ {
 				c := layout.Cell(x, y)
-				if c.Type == interpreter.TrackDoubleSlash {
+				if c.Anchor != nil {
+					// Do nothing
+				} else if c.Type == interpreter.TrackDoubleSlash {
 					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: interpreter.TrackDiagonalLower})
 					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: interpreter.TrackDiagonalUpper})
 				} else if c.Type == interpreter.TrackDoubleBackslash {
