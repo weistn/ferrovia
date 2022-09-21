@@ -12,8 +12,9 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/weistn/ferrovia/errlog"
 	"github.com/weistn/ferrovia/interpreter"
+	"github.com/weistn/ferrovia/model/structure"
+	"github.com/weistn/ferrovia/model/tracks"
 	"github.com/weistn/ferrovia/parser"
-	"github.com/weistn/ferrovia/tracks"
 	"github.com/weistn/ferrovia/view2d"
 	"github.com/weistn/ferrovia/viewlayout"
 	"github.com/weistn/goui"
@@ -24,6 +25,7 @@ import (
 type WindowAPI struct {
 }
 
+/*
 var demodata string = `{
 "tracks": [
 	{"c": 5, "r": 5, "kind": 20},
@@ -33,13 +35,14 @@ var demodata string = `{
 "columns": 20,
 "rows": 20
 }`
+*/
 
 //go:embed ui
 var uiFS embed.FS
 
 var window *goui.Window
 
-func loadFile(name string) (*tracks.TrackSystem, []*interpreter.Layout, error) {
+func loadFile(name string) (*tracks.TrackSystem, []*structure.ASCIIStructure, error) {
 	data, err := ioutil.ReadFile(name)
 	if err != nil {
 		return nil, nil, err

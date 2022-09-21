@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/weistn/ferrovia/errlog"
+	"github.com/weistn/ferrovia/model/tracks"
 	"github.com/weistn/ferrovia/parser"
-	"github.com/weistn/ferrovia/tracks"
 )
 
 var data string = `{"statements":[

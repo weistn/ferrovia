@@ -1,6 +1,8 @@
 package viewlayout
 
-import "github.com/weistn/ferrovia/interpreter"
+import (
+	"github.com/weistn/ferrovia/model/structure"
+)
 
 type LayoutDescription struct {
 	RowCount    int            `json:"rows"`
@@ -11,10 +13,10 @@ type LayoutDescription struct {
 type LayoutTrack struct {
 	X    int                        `json:"c"`
 	Y    int                        `json:"r"`
-	Kind interpreter.LayoutCellType `json:"kind"`
+	Kind structure.ASCIICellType `json:"kind"`
 }
 
-func Render(layouts []*interpreter.Layout) *LayoutDescription {
+func Render(layouts []*structure.ASCIIStructure) *LayoutDescription {
 	d := &LayoutDescription{}
 	for _, layout := range layouts {
 		if layout.ColumnCount > d.ColumnCount {
@@ -28,13 +30,13 @@ func Render(layouts []*interpreter.Layout) *LayoutDescription {
 				c := layout.Cell(x, y)
 				if c.Anchor != nil {
 					// Do nothing
-				} else if c.Type == interpreter.TrackDoubleSlash {
-					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: interpreter.TrackDiagonalLower})
-					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: interpreter.TrackDiagonalUpper})
-				} else if c.Type == interpreter.TrackDoubleBackslash {
-					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: interpreter.TrackDiagonalBackLower})
-					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: interpreter.TrackDiagonalBackUpper})
-				} else if c.Type != interpreter.UnprocessedCell && c.Type < 100 {
+				} else if c.Type == structure.TrackDoubleSlash {
+					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: structure.TrackDiagonalLower})
+					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: structure.TrackDiagonalUpper})
+				} else if c.Type == structure.TrackDoubleBackslash {
+					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: structure.TrackDiagonalBackLower})
+					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: structure.TrackDiagonalBackUpper})
+				} else if c.Type != structure.UnprocessedCell && c.Type < 100 {
 					d.Tracks = append(d.Tracks, &LayoutTrack{X: x, Y: y, Kind: c.Type})
 				}
 			}

@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"github.com/weistn/ferrovia/parser"
-	"github.com/weistn/ferrovia/tracks"
+	"github.com/weistn/ferrovia/model/tracks"
 )
 
 type Canvas struct {

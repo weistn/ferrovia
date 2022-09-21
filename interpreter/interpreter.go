@@ -4,8 +4,9 @@ import (
 	"strings"
 
 	"github.com/weistn/ferrovia/errlog"
+	"github.com/weistn/ferrovia/model/structure"
+	"github.com/weistn/ferrovia/model/tracks"
 	"github.com/weistn/ferrovia/parser"
-	"github.com/weistn/ferrovia/tracks"
 )
 
 type Interpreter struct {
@@ -13,7 +14,7 @@ type Interpreter struct {
 	ast              *parser.File
 	trackSystem      *tracks.TrackSystem
 	tracksWithAnchor []*tracks.Track
-	layouts          []*Layout
+	layouts          []*structure.ASCIIStructure
 	namedRailways    map[string]*namedRailway
 }
 
@@ -35,7 +36,7 @@ func NewInterpreter(errlog *errlog.ErrorLog) *Interpreter {
 	return &Interpreter{errlog: errlog, namedRailways: make(map[string]*namedRailway)}
 }
 
-func (b *Interpreter) Process(ast *parser.File) (*tracks.TrackSystem, []*Layout) {
+func (b *Interpreter) Process(ast *parser.File) (*tracks.TrackSystem, []*structure.ASCIIStructure) {
 	b.trackSystem = tracks.NewTrackSystem()
 	b.ast = ast
 	for _, s := range ast.Statements {
@@ -93,9 +94,10 @@ func (b *Interpreter) Process(ast *parser.File) (*tracks.TrackSystem, []*Layout)
 
 func (b *Interpreter) processLayout(ast *parser.Layout) {
 	lines := strings.Split(ast.RawText, "\n")
-	layout := NewLayout(lines, ast.LocationText)
-	layout.Process(b.errlog)
-	b.layouts = append(b.layouts, layout)
+	layout := processASCIIStructure(lines, ast.LocationText, b.errlog)
+	if layout != nil {
+		b.layouts = append(b.layouts, layout)
+	}
 }
 
 func (b *Interpreter) processLayer(ast *parser.Layer) {
