@@ -37,7 +37,7 @@ var demodata string = `{
 }`
 */
 
-//go:embed ui
+//go:embed view/*.html view/*.css view/*.js view/fonts view/switchtower/*.js view/switchtower/*.css view/tracks2d/*.js view/tracks2d/*.css
 var uiFS embed.FS
 
 var window *goui.Window
@@ -108,8 +108,7 @@ func main() {
 	remote := &WindowAPI{}
 
 	window = goui.NewWindow("/", remote, nil)
-	// window.Handle("/", http.FileServer(http.Dir("./ui")))
-	subfs, err := fs.Sub(uiFS, "ui")
+	subfs, err := fs.Sub(uiFS, "view")
 	if err != nil {
 		panic("Embedding failed")
 	}
