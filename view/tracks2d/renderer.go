@@ -1,10 +1,10 @@
-package view2d
+package tracks2d
 
 import (
 	"math"
 
-	"github.com/weistn/ferrovia/parser"
 	"github.com/weistn/ferrovia/model/tracks"
+	"github.com/weistn/ferrovia/parser"
 )
 
 type Canvas struct {

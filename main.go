@@ -15,8 +15,8 @@ import (
 	"github.com/weistn/ferrovia/model/structure"
 	"github.com/weistn/ferrovia/model/tracks"
 	"github.com/weistn/ferrovia/parser"
-	"github.com/weistn/ferrovia/view2d"
-	"github.com/weistn/ferrovia/viewlayout"
+	"github.com/weistn/ferrovia/view/switchtower"
+	"github.com/weistn/ferrovia/view/tracks2d"
 	"github.com/weistn/goui"
 
 	"embed"
@@ -74,13 +74,13 @@ func showFile(filename string) error {
 	}
 	ts.Name = "Demo"
 
-	canvas := view2d.Render(ts)
+	canvas := tracks2d.Render(ts)
 	if err := window.SendEvent("canvas", canvas); err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		return err
 	}
 
-	layout := viewlayout.Render(layouts)
+	layout := switchtower.Render(layouts)
 	if err = window.SendEvent("layout", layout); err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		return err

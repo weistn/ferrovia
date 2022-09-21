@@ -1,4 +1,4 @@
-package viewlayout
+package switchtower
 
 import (
 	"github.com/weistn/ferrovia/model/structure"
