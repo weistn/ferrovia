@@ -58,7 +58,7 @@ func loadFile(name string) (*model.Model, error) {
 	}
 
 	b := interpreter.NewInterpreter(log)
-	m := b.Process(file)
+	m := b.ProcessStatics(file)
 	if log.HasErrors() {
 		log.Print()
 		return nil, errors.New("interpreter error")

@@ -48,7 +48,7 @@ func TestInterpreter(t *testing.T) {
 
 	// Interpret
 	b := NewInterpreter(e)
-	model := b.Process(file)
+	model := b.ProcessStatics(file)
 	if model == nil {
 		t.Fatal("No model")
 	}

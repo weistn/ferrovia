@@ -1,8 +1,6 @@
 package interpreter
 
 import (
-	"math/big"
-
 	"github.com/weistn/ferrovia/errlog"
 	"github.com/weistn/ferrovia/parser"
 )
@@ -27,30 +25,16 @@ func evalDimensionExpression(b *Interpreter, ast *parser.DimensionExpression) (*
 	case "mm", "deg":
 		return left, nil
 	case "cm":
-		if left.Type == intType {
-			result := &ExprValue{}
-			result.IntegerValue = big.NewInt(0)
-			result.IntegerValue.Mul(left.IntegerValue, big.NewInt(10))
-			return result, nil
-		} else if left.Type == floatType {
-			result := &ExprValue{}
-			result.FloatValue = big.NewFloat(0)
-			result.FloatValue.Mul(left.FloatValue, big.NewFloat(10))
-			return result, nil
+		if left.Type == numberType {
+			result := &ExprValue{Type: numberType}
+			result.NumberValue *= 10
 		} else {
 			return nil, errlog.NewError(errlog.ErrorTypeMismtach, ast.Dimension.Location)
 		}
 	case "m":
-		if left.Type == intType {
-			result := &ExprValue{}
-			result.IntegerValue = big.NewInt(0)
-			result.IntegerValue.Mul(left.IntegerValue, big.NewInt(1000))
-			return result, nil
-		} else if left.Type == floatType {
-			result := &ExprValue{}
-			result.FloatValue = big.NewFloat(0)
-			result.FloatValue.Mul(left.FloatValue, big.NewFloat(1000))
-			return result, nil
+		if left.Type == numberType {
+			result := &ExprValue{Type: numberType}
+			result.NumberValue *= 1000
 		} else {
 			return nil, errlog.NewError(errlog.ErrorTypeMismtach, ast.Dimension.Location)
 		}
@@ -65,12 +49,20 @@ func evalBinaryExpression(b *Interpreter, ast *parser.BinaryExpression) (*ExprVa
 	}
 	switch ast.Op.Kind {
 	case parser.TokenLogicalAnd:
-		if left.Type == boolType && !left.BoolValue {
-			return &ExprValue{Type: boolType, BoolValue: false}, nil
+		b, err := left.ToBool(ast.Op.Location)
+		if err != nil {
+			return nil, err
+		}
+		if !b {
+			return &ExprValue{Type: numberType, NumberValue: 0}, nil
 		}
 	case parser.TokenLogicalOr:
-		if left.Type == boolType && left.BoolValue {
-			return &ExprValue{Type: boolType, BoolValue: false}, nil
+		b, err := left.ToBool(ast.Op.Location)
+		if err != nil {
+			return nil, err
+		}
+		if b {
+			return &ExprValue{Type: numberType, NumberValue: 1}, nil
 		}
 	}
 
@@ -128,4 +120,12 @@ func evalFloatExpression(b *Interpreter, ast parser.IExpression, loc errlog.Loca
 		return 0, err
 	}
 	return v.ToFloat(loc)
+}
+
+func evalBoolExpression(b *Interpreter, ast parser.IExpression, loc errlog.LocationRange) (bool, *errlog.Error) {
+	v, err := evalExpression(b, ast)
+	if err != nil {
+		return false, err
+	}
+	return v.ToBool(loc)
 }

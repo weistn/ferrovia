@@ -1,48 +1,56 @@
 package interpreter
 
 import (
-	"math/big"
-
 	"github.com/weistn/ferrovia/errlog"
 )
 
 type ExprValue struct {
-	Type         IType
-	StringValue  string
-	IntegerValue *big.Int
-	FloatValue   *big.Float
-	BoolValue    bool
-	VectorValue  []*ExprValue
+	Type        IType
+	StringValue string
+	NumberValue float64
+	VectorValue []*ExprValue
 }
 
 func (e *ExprValue) LogicalOr(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != boolType || p.Type != boolType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	return &ExprValue{Type: boolType, BoolValue: e.BoolValue || p.BoolValue}, nil
+	if (e.NumberValue != 0) || (p.NumberValue != 0) {
+		return &ExprValue{Type: numberType, NumberValue: 1}, nil
+	}
+	return &ExprValue{Type: numberType, NumberValue: 0}, nil
 }
 
 func (e *ExprValue) LogicalAnd(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != boolType && p.Type != boolType {
+	if e.Type != numberType && p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	return &ExprValue{Type: boolType, BoolValue: e.BoolValue || p.BoolValue}, nil
+	if (e.NumberValue != 0) && (p.NumberValue != 0) {
+		return &ExprValue{Type: numberType, NumberValue: 1}, nil
+	}
+	return &ExprValue{Type: numberType, NumberValue: 0}, nil
 }
 
 func (e *ExprValue) Equal(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
 	if e.Type != p.Type {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{Type: boolType}
+	result := &ExprValue{Type: numberType}
 	switch e.Type {
 	case stringType:
-		result.BoolValue = (e.StringValue == p.StringValue)
-	case intType:
-		result.BoolValue = (e.IntegerValue.Cmp(p.IntegerValue) == 0)
-	case floatType:
-		result.BoolValue = (e.FloatValue.Cmp(p.FloatValue) == 0)
-	case boolType:
-		result.BoolValue = (e.BoolValue == p.BoolValue)
+		if e.StringValue == p.StringValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case numberType:
+		if e.NumberValue == p.NumberValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case vectorType:
+		panic("TODO")
 	default:
 		panic("TODO")
 	}
@@ -53,16 +61,22 @@ func (e *ExprValue) NotEqual(p *ExprValue, loc errlog.LocationRange) (*ExprValue
 	if e.Type != p.Type {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{Type: boolType}
+	result := &ExprValue{Type: numberType}
 	switch e.Type {
 	case stringType:
-		result.BoolValue = (e.StringValue != p.StringValue)
-	case intType:
-		result.BoolValue = (e.IntegerValue.Cmp(p.IntegerValue) != 0)
-	case floatType:
-		result.BoolValue = (e.FloatValue.Cmp(p.FloatValue) != 0)
-	case boolType:
-		result.BoolValue = (e.BoolValue != p.BoolValue)
+		if e.StringValue != p.StringValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case numberType:
+		if e.NumberValue != p.NumberValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case vectorType:
+		panic("TODO")
 	default:
 		panic("TODO")
 	}
@@ -73,15 +87,21 @@ func (e *ExprValue) LessOrEqual(p *ExprValue, loc errlog.LocationRange) (*ExprVa
 	if e.Type != p.Type {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{Type: boolType}
+	result := &ExprValue{Type: numberType}
 	switch e.Type {
 	case stringType:
-		result.BoolValue = (e.StringValue <= p.StringValue)
-	case intType:
-		result.BoolValue = (e.IntegerValue.Cmp(p.IntegerValue) <= 0)
-	case floatType:
-		result.BoolValue = (e.FloatValue.Cmp(p.FloatValue) <= 0)
-	case boolType:
+		if e.StringValue <= p.StringValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case numberType:
+		if e.NumberValue <= p.NumberValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -93,15 +113,21 @@ func (e *ExprValue) GreaterOrEqual(p *ExprValue, loc errlog.LocationRange) (*Exp
 	if e.Type != p.Type {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{Type: boolType}
+	result := &ExprValue{Type: numberType}
 	switch e.Type {
 	case stringType:
-		result.BoolValue = (e.StringValue >= p.StringValue)
-	case intType:
-		result.BoolValue = (e.IntegerValue.Cmp(p.IntegerValue) >= 0)
-	case floatType:
-		result.BoolValue = (e.FloatValue.Cmp(p.FloatValue) >= 0)
-	case boolType:
+		if e.StringValue >= p.StringValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case numberType:
+		if e.NumberValue >= p.NumberValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -113,15 +139,21 @@ func (e *ExprValue) Less(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *e
 	if e.Type != p.Type {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{Type: boolType}
+	result := &ExprValue{Type: numberType}
 	switch e.Type {
 	case stringType:
-		result.BoolValue = (e.StringValue < p.StringValue)
-	case intType:
-		result.BoolValue = (e.IntegerValue.Cmp(p.IntegerValue) < 0)
-	case floatType:
-		result.BoolValue = (e.FloatValue.Cmp(p.FloatValue) < 0)
-	case boolType:
+		if e.StringValue < p.StringValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case numberType:
+		if e.NumberValue < p.NumberValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -133,15 +165,21 @@ func (e *ExprValue) Greater(p *ExprValue, loc errlog.LocationRange) (*ExprValue,
 	if e.Type != p.Type {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{Type: boolType}
+	result := &ExprValue{Type: numberType}
 	switch e.Type {
 	case stringType:
-		result.BoolValue = (e.StringValue > p.StringValue)
-	case intType:
-		result.BoolValue = (e.IntegerValue.Cmp(p.IntegerValue) > 0)
-	case floatType:
-		result.BoolValue = (e.FloatValue.Cmp(p.FloatValue) > 0)
-	case boolType:
+		if e.StringValue > p.StringValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case numberType:
+		if e.NumberValue > p.NumberValue {
+			result.NumberValue = 1
+		} else {
+			result.NumberValue = 0
+		}
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -157,13 +195,9 @@ func (e *ExprValue) Plus(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *e
 	switch e.Type {
 	case stringType:
 		result.StringValue = e.StringValue + p.StringValue
-	case intType:
-		result.IntegerValue = big.NewInt(0)
-		result.IntegerValue.Add(e.IntegerValue, p.IntegerValue)
-	case floatType:
-		result.FloatValue = big.NewFloat(0)
-		result.FloatValue.Add(e.FloatValue, p.FloatValue)
-	case boolType:
+	case numberType:
+		result.NumberValue = e.NumberValue + p.NumberValue
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -179,13 +213,9 @@ func (e *ExprValue) Minus(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *
 	switch e.Type {
 	case stringType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
-	case intType:
-		result.IntegerValue = big.NewInt(0)
-		result.IntegerValue.Sub(e.IntegerValue, p.IntegerValue)
-	case floatType:
-		result.FloatValue = big.NewFloat(0)
-		result.FloatValue.Sub(e.FloatValue, p.FloatValue)
-	case boolType:
+	case numberType:
+		result.NumberValue = e.NumberValue - p.NumberValue
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -201,13 +231,9 @@ func (e *ExprValue) Mul(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *er
 	switch e.Type {
 	case stringType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
-	case intType:
-		result.IntegerValue = big.NewInt(0)
-		result.IntegerValue.Mul(e.IntegerValue, p.IntegerValue)
-	case floatType:
-		result.FloatValue = big.NewFloat(0)
-		result.FloatValue.Mul(e.FloatValue, p.FloatValue)
-	case boolType:
+	case numberType:
+		result.NumberValue = e.NumberValue * p.NumberValue
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -223,13 +249,9 @@ func (e *ExprValue) Div(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *er
 	switch e.Type {
 	case stringType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
-	case intType:
-		result.IntegerValue = big.NewInt(0)
-		result.IntegerValue.Div(e.IntegerValue, p.IntegerValue)
-	case floatType:
-		result.FloatValue = big.NewFloat(0)
-		result.FloatValue.Quo(e.FloatValue, p.FloatValue)
-	case boolType:
+	case numberType:
+		result.NumberValue = e.NumberValue / p.NumberValue
+	case vectorType:
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	default:
 		panic("TODO")
@@ -238,85 +260,70 @@ func (e *ExprValue) Div(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *er
 }
 
 func (e *ExprValue) BinaryOr(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != intType || p.Type != intType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{}
-	result.IntegerValue = big.NewInt(0)
-	result.IntegerValue.Or(e.IntegerValue, p.IntegerValue)
-	return result, nil
+	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) | uint64(p.NumberValue))}, nil
 }
 
 func (e *ExprValue) BinaryAnd(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != intType || p.Type != intType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{}
-	result.IntegerValue = big.NewInt(0)
-	result.IntegerValue.And(e.IntegerValue, p.IntegerValue)
-	return result, nil
+	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) & uint64(p.NumberValue))}, nil
 }
 
 func (e *ExprValue) BinaryAndNot(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != intType || p.Type != intType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{}
-	result.IntegerValue = big.NewInt(0)
-	result.IntegerValue.AndNot(e.IntegerValue, p.IntegerValue)
-	return result, nil
+	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) &^ uint64(p.NumberValue))}, nil
 }
 
 func (e *ExprValue) BinaryXor(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != intType || p.Type != intType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{}
-	result.IntegerValue = big.NewInt(0)
-	result.IntegerValue.Xor(e.IntegerValue, p.IntegerValue)
-	return result, nil
+	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) ^ uint64(p.NumberValue))}, nil
 }
 
 func (e *ExprValue) Rem(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != intType || p.Type != intType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{}
-	result.IntegerValue = big.NewInt(0)
-	result.IntegerValue.Rem(e.IntegerValue, p.IntegerValue)
-	return result, nil
+	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) % uint64(p.NumberValue))}, nil
 }
 
 func (e *ExprValue) Lsh(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != intType || p.Type != intType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{}
-	result.IntegerValue = big.NewInt(0)
-	result.IntegerValue.Lsh(e.IntegerValue, uint(p.IntegerValue.Uint64()))
-	return result, nil
+	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) << uint64(p.NumberValue))}, nil
 }
 
 func (e *ExprValue) Rsh(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
-	if e.Type != intType || p.Type != intType {
+	if e.Type != numberType || p.Type != numberType {
 		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 	}
-	result := &ExprValue{}
-	result.IntegerValue = big.NewInt(0)
-	result.IntegerValue.Rsh(e.IntegerValue, uint(p.IntegerValue.Uint64()))
-	return result, nil
+	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) >> uint64(p.NumberValue))}, nil
 }
 
 func (e *ExprValue) ToFloat(loc errlog.LocationRange) (float64, *errlog.Error) {
-	if e.Type == floatType {
-		v, _ := e.FloatValue.Float64()
-		return v, nil
-	}
-	if e.Type == intType {
-		var f = big.NewFloat(0)
-		f.SetInt(e.IntegerValue)
-		v, _ := e.FloatValue.Float64()
-		return v, nil
+	if e.Type == numberType {
+		return e.NumberValue, nil
 	}
 	return 0, errlog.NewError(errlog.ErrorTypeMismtach, loc)
+}
+
+func (e *ExprValue) ToBool(loc errlog.LocationRange) (bool, *errlog.Error) {
+	if e.Type == numberType {
+		return e.NumberValue != 0, nil
+	}
+	if e.Type == stringType {
+		return e.StringValue != "", nil
+	}
+	if e.Type == vectorType {
+		return len(e.VectorValue) != 0, nil
+	}
+	return false, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 }

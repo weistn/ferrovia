@@ -23,7 +23,7 @@ func NewInterpreter(errlog *errlog.ErrorLog) *Interpreter {
 	return &Interpreter{errlog: errlog, model: m, identifiers: make(map[string]interface{})}
 }
 
-func (b *Interpreter) Process(ast *parser.File) *model.Model {
+func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 	b.ast = ast
 
 	// Determine all identifiers
