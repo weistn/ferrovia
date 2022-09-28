@@ -58,6 +58,9 @@ function renderCanvas(c, svgView, svgMeasure, svgGround, svgTracks) {
         c.layers = [];
     }
     for (layer of c.layers) {
+        if (!layer.tracks) {
+            continue
+        }
         for (track of layer.tracks) {
             if (track.l) {
                 for (var line of track.l) {

@@ -39,8 +39,26 @@ func (c *GroundContext) Call(b *Interpreter, loc errlog.LocationRange, name stri
 		c.Ground.Height, err = evalFloatExpression(b, args[0], loc)
 		return nil, true, err
 	case "polygon":
-		if len(args) != 1 {
+		if len(args) < 3 {
 			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+		}
+		for _, arg := range args {
+			vector, err := evalVectorExpression(b, arg, loc)
+			if err != nil {
+				return nil, true, err
+			}
+			if len(vector) != 2 {
+				b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			}
+			x, err := evalFloatExpression(b, vector[0], loc)
+			if err != nil {
+				return nil, true, err
+			}
+			y, err := evalFloatExpression(b, vector[0], loc)
+			if err != nil {
+				return nil, true, err
+			}
+			c.Ground.Polygon = append(c.Ground.Polygon, model.GroundPoint{X: x, Y: y})
 		}
 	}
 	return nil, false, nil

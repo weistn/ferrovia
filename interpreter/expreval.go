@@ -129,3 +129,14 @@ func evalBoolExpression(b *Interpreter, ast parser.IExpression, loc errlog.Locat
 	}
 	return v.ToBool(loc)
 }
+
+func evalVectorExpression(b *Interpreter, ast parser.IExpression, loc errlog.LocationRange) ([]*ExprValue, *errlog.Error) {
+	v, err := evalExpression(b, ast)
+	if err != nil {
+		return nil, err
+	}
+	if v.Type != vectorType {
+		return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
+	}
+	return v.VectorValue, nil
+}
