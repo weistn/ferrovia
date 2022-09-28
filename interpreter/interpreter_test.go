@@ -8,76 +8,68 @@ import (
 	"github.com/weistn/ferrovia/parser"
 )
 
-var data string = `{"statements":[
-	{"way":{
-		"exp": [
-			{"anchor":{"x": 100, "y": 100, "z": 0, "a": 0}},
-			{"con":{"name": "A"}},
-			{"track":{"t": "G1"}},
-			{"track":{"t": "G4"}},
-			{"con":{"name": "B"}}
-		]
-	}},
-	{"way":{
-		"exp": [
-			{"con":{"name": "B"}},
-			{"repeat":{"n": 6, "exp":[
-				{"track":{"t": "R6"}}
-			]}},
-			{"track":{"t": "G1"}},
-			{"track":{"t": "G1"}},
-			{"repeat":{"n": 6, "exp":[
-				{"track":{"t": "R6"}}
-			]}},
-			{"con":{"name": "A"}}
-		]
-	}}
-]}`
+var data string = `
+tracks {
+	mountain
+    Ausfahrt
+    @(120 mm, 120 mm, 0 mm, 180 deg)
+    G1
+    G1
+    3 * R6
+    ` + "`" + `Gleis 1` + "`" + `
+}
 
-/*
-var data2 string = `{"statements":[
-	{"way":{
-		"exp": [
-			{"anchor":{"x": 100, "y": 100, "z": 0, "a": 0}},
-			{"con":{"name": "A"}},
-			{"track":{"t": "G1"}},
-			{"track":{"t": "G4"}},
-			{"con":{"name": "B"}}
-		]
-	}}
-]}`
-*/
+tracks Spindel(radius) {
+	6 * radius
+}
+
+layer mountain {
+	color("red")
+}
+
+ground {
+	top(0 cm)
+	left(0 cm)
+	polygon([530 cm, 335 cm], [530 cm, 385 cm], [0 cm, 385 cm], [0 cm, 335 cm])
+}`
 
 func TestInterpreter(t *testing.T) {
 	tracks.InitRoco()
-	file, err := parser.Load([]byte(data))
-	if err != nil {
-		t.Fatal(err)
-	}
 	e := errlog.NewErrorLog()
+
+	// Parse
+	fileId := e.AddFile(errlog.NewSourceFile("data"))
+	p := parser.NewParser(e)
+	file := p.Parse(fileId, data)
+	if e.HasErrors() {
+		e.Print()
+		t.Fail()
+	}
+
+	// Interpret
 	b := NewInterpreter(e)
-	ts, _ := b.Process(file)
-	if ts == nil {
-		t.Fatal("No track system")
+	model := b.Process(file)
+	if model == nil {
+		t.Fatal("No model")
 	}
 	if e.HasErrors() {
 		e.Print()
 		t.Fail()
 	}
-	if len(ts.Layers[""].Tracks) != 16 {
-		println(len(ts.Layers[""].Tracks))
+	if len(model.Tracks.Layers[""].Tracks) != 16 {
+		println(len(model.Tracks.Layers[""].Tracks))
 		t.Fatal("Tracks missing")
 	}
-	if ts.GetMark("A") == nil {
+	if model.Tracks.GetMark("A") == nil {
 		t.Fatal("Missing mark A")
 	}
-	if ts.GetMark("B") == nil {
+	if model.Tracks.GetMark("B") == nil {
 		t.Fatal("Missing mark B")
 	}
-	if !ts.GetMark("A").Connection.IsConnected() {
+	if !model.Tracks.GetMark("A").Connection.IsConnected() {
 		t.Fatal("Mark A not connected")
 	}
-	if !ts.GetMark("B").Connection.IsConnected() {
+	if !model.Tracks.GetMark("B").Connection.IsConnected() {
 		t.Fatal("Mark B not connected")
 	}
 }

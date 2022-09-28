@@ -26,7 +26,7 @@ func (p *Parser) Parse(fileId int, str string) *File {
 
 func (p *Parser) parseFile(f *File) {
 	for {
-		t, err := p.expectMulti(TokenRailway, TokenGround, TokenEOF, TokenNewline, TokenIdentifier)
+		t, err := p.expectMulti(TokenEOF, TokenNewline, TokenIdentifier)
 		if err != nil {
 			p.log.AddError(err)
 			return
@@ -34,34 +34,34 @@ func (p *Parser) parseFile(f *File) {
 		if t.Kind == TokenNewline {
 			continue
 		}
-		if t.Kind == TokenRailway {
-			rail, err := p.parseRailway(t)
-			if err != nil {
-				p.log.AddError(err)
-				return
-			}
-			f.Statements = append(f.Statements, &Statement{RailWay: rail})
-		} else if t.Kind == TokenLayer {
-			l, err := p.parseLayer(t)
-			if err != nil {
-				p.log.AddError(err)
-				return
-			}
-			f.Statements = append(f.Statements, &Statement{Layer: l})
-		} else if t.Kind == TokenGround {
-			ground, err := p.parseGround(t)
-			if err != nil {
-				p.log.AddError(err)
-				return
-			}
-			f.Statements = append(f.Statements, &Statement{GroundPlate: ground})
-		} else if t.Kind == TokenIdentifier {
-			if t.StringValue == "layout" {
-				l, err := p.parseLayout(t)
+		if t.Kind == TokenIdentifier {
+			if t.StringValue == "tracks" {
+				tracks, err := p.parseTracks(t)
+				if err != nil {
+					p.log.AddError(err)
+					return
+				}
+				f.Statements = append(f.Statements, tracks)
+			} else if t.StringValue == "layer" {
+				l, err := p.parseLayer(t)
+				if err != nil {
+					p.log.AddError(err)
+					return
+				}
+				f.Statements = append(f.Statements, l)
+			} else if t.StringValue == "ground" {
+				ground, err := p.parseGround(t)
+				if err != nil {
+					p.log.AddError(err)
+					return
+				}
+				f.Statements = append(f.Statements, ground)
+			} else if t.StringValue == "switchboard" {
+				sb, err := p.parseSwitchboard(t)
 				if err != nil {
 					return
 				}
-				f.Statements = append(f.Statements, &Statement{Layout: l})
+				f.Statements = append(f.Statements, sb)
 			} else {
 				p.log.LogError(errlog.ErrorUnknownDirective, t.Location, t.StringValue)
 			}
@@ -73,324 +73,203 @@ func (p *Parser) parseFile(f *File) {
 	}
 }
 
-func (p *Parser) parseLayer(t *Token) (*Layer, *errlog.Error) {
-	l := &Layer{Location: t.Location}
-
-	if _, ok := p.optional(TokenOpenBraces); ok {
-		if _, err := p.expect(TokenNewline); err != nil {
+func (p *Parser) parseBody() ([]IExpression, *errlog.Error) {
+	var expressions []IExpression
+	// Parse body
+	for {
+		if _, ok := p.optional(TokenNewline); ok {
+			continue
+		}
+		if _, ok := p.optional(TokenCloseBraces); ok {
+			break
+		}
+		expr, err := p.parseExpression()
+		if err != nil {
 			return nil, err
 		}
-		for {
-			if _, ok := p.optional(TokenCloseBraces); ok {
-				break
-			}
-			t, err := p.expect(TokenIdentifier)
-			if err != nil {
-				return nil, err
-			}
-			if _, err := p.expect(TokenColon); err != nil {
-				return nil, err
-			}
-			if t.StringValue == "Color" {
-				// TODO
-			} else {
-				return nil, errlog.NewError(errlog.ErrorIllegalProperty, t.Location, t.StringValue)
-			}
-			if _, err := p.expect(TokenNewline); err != nil {
-				return nil, err
-			}
-		}
+		expressions = append(expressions, expr)
 	}
-	return l, nil
+	return expressions, nil
 }
 
-func (p *Parser) parseRailway(t *Token) (*RailWay, *errlog.Error) {
-	rail := &RailWay{Location: t.Location}
+func (p *Parser) parseLayer(t *Token) (*Layer, *errlog.Error) {
+	l := &Layer{Location: t.Location}
+	var err *errlog.Error
 
 	// Parse optional name
-	if t, ok := p.optional(TokenIdentifier); ok {
-		rail.Name = t.StringValue
+	l.Name, err = p.expect(TokenIdentifier)
+	if err != nil {
+		return nil, err
 	}
 
-	// Parse configutation values, e.g. "railway { ... }"
-	if _, ok := p.optional(TokenOpenBraces); ok {
-		if _, err := p.expect(TokenNewline); err != nil {
-			return nil, err
-		}
-		for {
-			if _, ok := p.optional(TokenCloseBraces); ok {
-				break
-			}
-			t, err := p.expect(TokenIdentifier)
-			if err != nil {
-				return nil, err
-			}
-			if _, err := p.expect(TokenColon); err != nil {
-				return nil, err
-			}
-			if t.StringValue == "Layer" {
-				t, err = p.expect(TokenIdentifier)
-				if err != nil {
-					return nil, err
-				}
-				rail.Layer = t.Raw
-			} else {
-				return nil, errlog.NewError(errlog.ErrorIllegalProperty, t.Location, t.StringValue)
-			}
-			if _, err := p.expect(TokenNewline); err != nil {
-				return nil, err
-			}
-		}
-	}
-	// Parse rows, e.g. "railway ( ... )"
-	if _, err := p.expect(TokenOpenParanthesis); err != nil {
+	if _, err := p.expect(TokenOpenBraces); err != nil {
 		return nil, err
 	}
 	if _, err := p.expect(TokenNewline); err != nil {
 		return nil, err
 	}
-	for {
-		if _, ok := p.optional(TokenCloseParanthesis); ok {
-			break
-		}
-		row, err := p.parseRow()
-		if err != nil {
-			return nil, err
-		}
-		if row != nil {
-			rail.Rows = append(rail.Rows, row)
-		}
-	}
-	return rail, nil
-}
 
-func (p *Parser) parseRow() (*ExpressionRow, *errlog.Error) {
-	row := &ExpressionRow{}
-	for {
-		if _, ok := p.optional(TokenNewline); ok {
-			break
-		}
-		exp, err := p.parseExpression()
-		if err != nil {
-			return nil, err
-		}
-		row.Expressions = append(row.Expressions, exp)
-	}
-	if len(row.Expressions) == 0 {
-		return nil, nil
-	}
-	return row, nil
-}
-
-/*
-func (p *Parser) parseExpressionList(t *Token) ([]*Expression, *errlog.Error) {
-	var expressions []*Expression
-	p.optional(TokenNewline)
-	for {
-		if _, ok := p.optional(TokenCloseParanthesis); ok {
-			break
-		}
-		exp, err := p.parseExpression()
-		if err != nil {
-			return expressions, err
-		}
-		expressions = append(expressions, exp...)
-	}
-	return expressions, nil
-}
-*/
-
-func (p *Parser) parseExpression() (*Expression, *errlog.Error) {
-	if p.peek(TokenAt) || p.peek(TokenEnd) || p.peek(TokenEllipsis) || p.peek(TokenPipe) {
-		return p.parseSimpleExpression()
-	}
-	//
-	// RepeatExpression
-	//
-	if t, ok := p.optional(TokenInteger); ok {
-		if !t.IntegerValue.IsInt64() {
-			return nil, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
-		}
-		count := t.IntegerValue.Int64()
-		if count < 0 || count >= 100 {
-			return nil, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
-		}
-		if _, err := p.expect(TokenAsterisk); err != nil {
-			return nil, err
-		}
-		exp, err := p.parseSimpleExpression()
-		if err != nil {
-			return nil, err
-		}
-		rep := &Expression{Repeat: &RepeatExpression{Count: int(count), TrackExpression: exp}, Location: t.Location}
-		return rep, nil
-	}
-	//
-	// TrackExpression, TrackTerminationExpression or SwitchExpression
-	//
-	t, switchok := p.optionalMulti(TokenSlash, TokenBackslash)
-	if switchok {
-		// Consume dashes
-		for {
-			if _, ok := p.optional(TokenDash); !ok {
-				break
-			}
-		}
-	}
-	exp, err := p.parseSimpleExpression()
+	// Parse body
+	l.Expressions, err = p.parseBody()
 	if err != nil {
 		return nil, err
 	}
-	t2, switchok2 := p.optionalMulti(TokenSlash, TokenBackslash, TokenDash)
-	if switchok2 && t2.Kind == TokenDash {
-		// Consume dashes
-		for {
-			t2, err = p.expectMulti(TokenSlash, TokenBackslash, TokenDash)
-			if err != nil {
-				return nil, err
-			}
-			if t2.Kind != TokenDash {
-				break
-			}
-		}
-	}
-	if switchok || switchok2 {
-		// It is a switch expression
-		if exp.Track == nil {
-			p.log.LogError(errlog.ErrorNoSwitchInSwitchExpression, exp.Location)
-		}
-		s := &SwitchExpression{TrackExpression: *exp.Track}
-		if switchok {
-			s.PositionLeft = t.Location.Position()
-			if t.Kind == TokenSlash {
-				s.SplitLeft = true
-			} else {
-				s.JoinLeft = true
-			}
-		}
-		if switchok2 {
-			s.PositionRight = t2.Location.Position()
-			if t2.Kind == TokenSlash {
-				s.JoinRight = true
-			} else {
-				s.SplitRight = true
-			}
-		}
-		return &Expression{Switch: s, Location: exp.Location}, nil
-	}
-	return exp, nil
+
+	return l, nil
 }
 
-func (p *Parser) parseSimpleExpression() (*Expression, *errlog.Error) {
-	t, err := p.expectMulti(TokenIdentifier, TokenEnd, TokenEllipsis, TokenAt, TokenString, TokenPipe, TokenInteger /*, TokenOpenParanthesis*/)
-	if err != nil {
-		return nil, err
-	}
-	/*
-		if t.Kind == TokenOpenParanthesis {
-			return p.parseExpressionList(t)
-		}
-	*/
-	if t.Kind == TokenPipe {
-		exp := &Expression{Placeholder: true, Location: t.Location}
-		return exp, nil
-	}
-	if t.Kind == TokenEllipsis {
-		ident, err := p.expect(TokenIdentifier)
-		if err != nil {
-			return nil, err
-		}
-		exp := &Expression{TrackTermination: &TrackTerminationExpression{Name: ident.StringValue, EllipsisLeft: true}, Location: t.Location}
-		return exp, nil
-	}
-	if t.Kind == TokenIdentifier {
-		exp := &Expression{Track: &TrackExpression{Type: t.StringValue}, Location: t.Location}
+func (p *Parser) parseTracks(t *Token) (*Tracks, *errlog.Error) {
+	tracks := &Tracks{Location: t.Location}
+
+	// Parse optional name and optional parameter list
+	if t, ok := p.optional(TokenIdentifier); ok {
+		tracks.Name = t
 		if _, ok := p.optional(TokenOpenParanthesis); ok {
-			for i := 0; ; i++ {
+			var params []*Parameter
+			for {
 				if _, ok := p.optional(TokenCloseParanthesis); ok {
 					break
 				}
-				if i != 0 {
+				if len(params) != 0 {
 					if _, err := p.expect(TokenComma); err != nil {
 						return nil, err
 					}
 				}
-				p, err := p.parseParameter()
+				t, err := p.expect(TokenIdentifier)
 				if err != nil {
 					return nil, err
 				}
-				exp.Track.Parameters = append(exp.Track.Parameters, p)
+				params = append(params, &Parameter{Name: t})
 			}
-		} else if _, ok := p.optional(TokenEllipsis); ok {
-			exp.TrackTermination = &TrackTerminationExpression{Name: exp.Track.Type, EllipsisRight: true}
-			exp.Track = nil
+			tracks.Parameters = params
 		}
-		return exp, nil
-	} else if t.Kind == TokenEnd {
-		exp := &Expression{TrackTermination: &TrackTerminationExpression{}, Location: t.Location}
-		return exp, nil
+	}
+
+	if _, err := p.expect(TokenOpenBraces); err != nil {
+		return nil, err
+	}
+	if _, err := p.expect(TokenNewline); err != nil {
+		return nil, err
+	}
+
+	// Parse body
+	var err *errlog.Error
+	tracks.Expressions, err = p.parseBody()
+	if err != nil {
+		return nil, err
+	}
+
+	return tracks, nil
+}
+
+func (p *Parser) parseExpression() (IExpression, *errlog.Error) {
+	expr, err := p.parseCallExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	//
+	// BinaryExpression ?
+	//
+	if t, ok := p.optional(TokenAsterisk); ok {
+		expr2, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		return &BinaryExpression{Left: expr, Op: t, Right: expr2}, nil
+	}
+	return expr, nil
+}
+
+func (p *Parser) parseCallExpression() (IExpression, *errlog.Error) {
+	expr, err := p.parseSimpleExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	//
+	// CallExpression ?
+	//
+	if _, ok := p.optional(TokenOpenParanthesis); ok {
+		var args []IExpression
+		for {
+			if _, ok := p.optional(TokenCloseParanthesis); ok {
+				break
+			}
+			if len(args) != 0 {
+				if _, err := p.expect(TokenComma); err != nil {
+					return nil, err
+				}
+			}
+			arg, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+		}
+		return &CallExpression{Func: expr, Arguments: args}, nil
+	}
+	return expr, nil
+}
+
+func (p *Parser) parseSimpleExpression() (IExpression, *errlog.Error) {
+	t, err := p.expectMulti(TokenIdentifier, TokenAt, TokenString, TokenInteger, TokenFloat, TokenOpenParanthesis, TokenOpenBracket)
+	if err != nil {
+		return nil, err
+	}
+
+	// For strings and @, dimensions are not allowed
+	if t.Kind == TokenString {
+		return &ConstantExpression{Value: t}, nil
 	} else if t.Kind == TokenAt {
-		if _, err := p.expect(TokenOpenParanthesis); err != nil {
-			return nil, err
+		return &IdentifierExpression{Identifier: t}, nil
+	} else if t.Kind == TokenOpenBracket {
+		var values []IExpression
+		for {
+			if _, ok := p.optional(TokenCloseBracket); ok {
+				break
+			}
+			if len(values) != 0 {
+				if _, err := p.expect(TokenComma); err != nil {
+					return nil, err
+				}
+			}
+			value, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			values = append(values, value)
 		}
-		x, err := p.expectConstantWithLengthUnit()
-		if err != nil {
-			return nil, err
-		}
-		if _, err = p.expect(TokenComma); err != nil {
-			return nil, err
-		}
-		y, err := p.expectConstantWithLengthUnit()
-		if err != nil {
-			return nil, err
-		}
-		if _, err = p.expect(TokenComma); err != nil {
-			return nil, err
-		}
-		z, err := p.expectConstantWithLengthUnit()
-		if err != nil {
-			return nil, err
-		}
-		if _, err = p.expect(TokenComma); err != nil {
-			return nil, err
-		}
-		a, err := p.expectConstantWithAngleUnit()
-		if err != nil {
-			return nil, err
-		}
-		t2, err := p.expect(TokenCloseParanthesis)
-		if err != nil {
-			return nil, err
-		}
-		exp := &Expression{Anchor: &AnchorExpression{X: x, Y: y, Z: z, Angle: a}, Location: t.Location.Join(t2.Location)}
-		return exp, nil
+		return &VectorExpression{Values: values, Location: t.Location}, nil
+	}
+
+	var expr IExpression
+	if t.Kind == TokenIdentifier || t.Kind == TokenAt {
+		expr = &IdentifierExpression{Identifier: t}
 	} else if t.Kind == TokenInteger {
 		if !t.IntegerValue.IsInt64() {
 			return nil, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
 		}
-		count := t.IntegerValue.Int64()
-		if count < 0 || count >= 100 {
-			return nil, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
-		}
-		if _, err := p.expect(TokenAsterisk); err != nil {
-			return nil, err
-		}
-		exp, err := p.parseSimpleExpression()
+		expr = &ConstantExpression{Value: t}
+	} else if t.Kind == TokenFloat {
+		expr = &ConstantExpression{Value: t}
+	} else if t.Kind == TokenOpenParanthesis {
+		expr, err = p.parseExpression()
 		if err != nil {
 			return nil, err
 		}
-		if exp.Track == nil {
-			p.log.LogError(errlog.ErrorNoTrackInRepeatExpression, exp.Location)
+		if _, err := p.expect(TokenCloseParanthesis); err != nil {
+			return nil, err
 		}
-		rep := &Expression{Repeat: &RepeatExpression{Count: int(count), TrackExpression: exp}}
-		return rep, nil
+	} else {
+		panic("Oooops")
 	}
-	panic("Oooops")
-}
 
-func (p *Parser) parseParameter() (interface{}, *errlog.Error) {
-	// TODO
-	return p.expectMulti(TokenIdentifier, TokenInteger)
+	// Check for dimension
+	if t, ok := p.optional(TokenUnit); ok {
+		return &DimensionExpression{Value: expr, Dimension: t}, nil
+	}
+	return expr, nil
 }
 
 func (p *Parser) parseGround(t *Token) (*GroundPlate, *errlog.Error) {
@@ -401,91 +280,28 @@ func (p *Parser) parseGround(t *Token) (*GroundPlate, *errlog.Error) {
 		return nil, err
 	}
 	ground := &GroundPlate{Location: t.Location}
-	for {
-		if _, ok := p.optional(TokenCloseBraces); ok {
-			break
-		}
-		t, err := p.expect(TokenIdentifier)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := p.expect(TokenColon); err != nil {
-			return nil, err
-		}
-		if t.StringValue == "Top" {
-			ground.Top, err = p.expectConstantWithLengthUnit()
-			if err != nil {
-				return nil, err
-			}
-		} else if t.StringValue == "Left" {
-			ground.Left, err = p.expectConstantWithLengthUnit()
-			if err != nil {
-				return nil, err
-			}
-		} else if t.StringValue == "Width" {
-			ground.Width, err = p.expectConstantWithLengthUnit()
-			if err != nil {
-				return nil, err
-			}
-		} else if t.StringValue == "Height" {
-			ground.Height, err = p.expectConstantWithLengthUnit()
-			if err != nil {
-				return nil, err
-			}
-		} else if t.StringValue == "Polygon" {
-			ground.Polygon, err = p.parseGroundPolygon()
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, errlog.NewError(errlog.ErrorIllegalProperty, t.Location, t.StringValue)
-		}
-		if _, err := p.expect(TokenNewline); err != nil {
-			return nil, err
-		}
+
+	// Parse body
+	var err *errlog.Error
+	ground.Expressions, err = p.parseBody()
+	if err != nil {
+		return nil, err
 	}
+
 	return ground, nil
 }
 
-func (p *Parser) parseGroundPolygon() ([]GroundPoint, *errlog.Error) {
-	var points []GroundPoint
-	for {
-		var pnt GroundPoint
-		if _, ok := p.optional(TokenOpenParanthesis); !ok {
-			return points, nil
-		}
-		var err *errlog.Error
-		pnt.X, err = p.expectConstantWithLengthUnit()
-		if err != nil {
-			return points, err
-		}
-		_, err = p.expect(TokenComma)
-		if err != nil {
-			return points, nil
-		}
-		pnt.Y, err = p.expectConstantWithLengthUnit()
-		if err != nil {
-			return points, err
-		}
-		_, err = p.expect(TokenCloseParanthesis)
-		if err != nil {
-			return points, nil
-		}
-		points = append(points, pnt)
-	}
-}
-
-func (p *Parser) parseLayout(t *Token) (l *Layout, err *errlog.Error) {
-	_, err = p.expect(TokenOpenParanthesis)
+func (p *Parser) parseSwitchboard(t *Token) (sb *Switchboard, err *errlog.Error) {
+	_, err = p.expect(TokenOpenBraces)
 	if err != nil {
 		return
 	}
-	str, lstr := p.l.ScanRawText(')')
-	_, err = p.expect(TokenCloseParanthesis)
+	str, lstr := p.l.ScanRawText('}')
+	_, err = p.expect(TokenCloseBraces)
 	if err != nil {
 		return
 	}
-	return &Layout{RawText: str, LocationToken: t.Location, LocationText: lstr}, nil
+	return &Switchboard{RawText: str, LocationToken: t.Location, LocationText: lstr}, nil
 }
 
 func (p *Parser) expect(tokenKind TokenKind) (*Token, *errlog.Error) {
@@ -521,6 +337,7 @@ func (p *Parser) optional(tokenKind TokenKind) (*Token, bool) {
 	return t, true
 }
 
+/*
 func (p *Parser) optionalMulti(tokenKind ...TokenKind) (*Token, bool) {
 	t := p.scan()
 	for _, k := range tokenKind {
@@ -531,12 +348,15 @@ func (p *Parser) optionalMulti(tokenKind ...TokenKind) (*Token, bool) {
 	p.savedToken = t
 	return nil, false
 }
+*/
 
+/*
 func (p *Parser) peek(tokenKind TokenKind) bool {
 	t := p.scan()
 	p.savedToken = t
 	return t.Kind == tokenKind
 }
+*/
 
 func (p *Parser) scan() *Token {
 	if p.savedToken != nil {
@@ -558,57 +378,3 @@ func (p *Parser) expectError(tokenKind ...TokenKind) *errlog.Error {
 	return err
 }
 */
-
-func (p *Parser) expectConstantWithLengthUnit() (value float64, err *errlog.Error) {
-	t, err := p.expectMulti(TokenInteger, TokenFloat)
-	if err != nil {
-		return 0, err
-	}
-	if t.Kind == TokenInteger {
-		if !t.IntegerValue.IsInt64() {
-			return 0, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
-		}
-		value = float64(t.IntegerValue.Int64())
-	} else {
-		value, _ = t.FloatValue.Float64()
-	}
-	unit, err := p.expect(TokenUnit)
-	if err != nil {
-		return 0, nil
-	}
-	if unit.StringValue == "mm" {
-		// Do nothing
-	} else if unit.StringValue == "cm" {
-		value *= 10
-	} else if unit.StringValue == "m" {
-		value *= 1000
-	} else {
-		return 0, errlog.NewError(errlog.ErrorIllegalUnit, unit.Location, unit.StringValue)
-	}
-	return
-}
-
-func (p *Parser) expectConstantWithAngleUnit() (value float64, err *errlog.Error) {
-	t, err := p.expectMulti(TokenInteger, TokenFloat)
-	if err != nil {
-		return 0, err
-	}
-	if t.Kind == TokenInteger {
-		if !t.IntegerValue.IsInt64() {
-			return 0, errlog.NewError(errlog.ErrorIllegalNumber, t.Location)
-		}
-		value = float64(t.IntegerValue.Int64())
-	} else {
-		value, _ = t.FloatValue.Float64()
-	}
-	unit, err := p.expect(TokenUnit)
-	if err != nil {
-		return 0, nil
-	}
-	if unit.StringValue == "deg" {
-		// Do nothing
-	} else {
-		return 0, errlog.NewError(errlog.ErrorIllegalUnit, unit.Location, unit.StringValue)
-	}
-	return
-}

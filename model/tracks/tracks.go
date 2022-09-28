@@ -2,14 +2,11 @@ package tracks
 
 import (
 	"github.com/weistn/ferrovia/errlog"
-	"github.com/weistn/ferrovia/parser"
 )
 
 // A TrackSystem connsist of tracks, which are usually connected with each other (but not necessarily).
 type TrackSystem struct {
-	Name   string
 	Layers map[string]*TrackLayer
-	Ground []*parser.GroundPlate
 	marks  map[string]*TrackMark
 }
 

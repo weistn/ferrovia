@@ -3,17 +3,17 @@ package tracks2d
 import (
 	"math"
 
+	"github.com/weistn/ferrovia/model"
 	"github.com/weistn/ferrovia/model/tracks"
-	"github.com/weistn/ferrovia/parser"
 )
 
 type Canvas struct {
 	Name string `json:"name"`
 	// Maps layer names to sequences of tracks
-	Layers []*Layer              `json:"layers"`
-	Width  float64               `json:"width"`
-	Height float64               `json:"height"`
-	Ground []*parser.GroundPlate `json:"ground"`
+	Layers []*Layer             `json:"layers"`
+	Width  float64              `json:"width"`
+	Height float64              `json:"height"`
+	Ground []*model.GroundPlate `json:"ground"`
 }
 
 type Layer struct {
@@ -49,10 +49,11 @@ type Arc struct {
 	TrackAngle float64 `json:"ta"`
 }
 
-func Render(ts *tracks.TrackSystem) *Canvas {
+func Render(m *model.Model) *Canvas {
+	ts := m.Tracks
 	tracks.NewEpoch()
 	c := &Canvas{}
-	c.Name = ts.Name
+	c.Name = m.Name
 	for _, l := range ts.Layers {
 		cl := &Layer{Name: l.Name}
 		c.Layers = append(c.Layers, cl)
@@ -60,7 +61,7 @@ func Render(ts *tracks.TrackSystem) *Canvas {
 			renderTrack(track, cl, c)
 		}
 	}
-	for _, ground := range ts.Ground {
+	for _, ground := range m.GroundPlates {
 		c.Ground = append(c.Ground, ground)
 		if len(ground.Polygon) != 0 {
 			for _, p := range ground.Polygon {

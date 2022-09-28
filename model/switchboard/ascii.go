@@ -1,4 +1,4 @@
-package structure
+package switchboard
 
 import (
 	"github.com/weistn/ferrovia/errlog"
@@ -64,83 +64,84 @@ const (
 	// Used internally only, not understood by the HTML UI
 	TrackDoubleSlash
 )
+
 /*
- * ASCIIStructure represents an ASCII representation of a layout structure.
+ * ASCIISwitchboard holds an ASCII representation of a switchboard.
  * Instances of this type are created while interpreting *.via files.
  */
-type ASCIIStructure struct {
+type ASCIISwitchboard struct {
 	LineCount   int
 	ColumnCount int
 	Lines       []string
-	Cells       []ASCIICell
+	Cells       []ASCIISwitchboardCell
 	Location    errlog.LocationRange
 }
 
-type ASCIICell struct {
+type ASCIISwitchboardCell struct {
 	Type        ASCIICellType
 	Connections ASCIICellConnection
 	Rune        rune
 	X           int
 	Y           int
-	Anchor      *ASCIICell
+	Anchor      *ASCIISwitchboardCell
 }
 
-func (l *ASCIIStructure) Cell(x int, y int) *ASCIICell {
+func (l *ASCIISwitchboard) Cell(x int, y int) *ASCIISwitchboardCell {
 	if x < 0 || y < 0 || x >= l.ColumnCount || y >= l.LineCount {
 		return nil
 	}
 	return &l.Cells[y*l.ColumnCount+x]
 }
 
-func (l *ASCIIStructure) CellBelow(x int, y int) *ASCIICell {
+func (l *ASCIISwitchboard) CellBelow(x int, y int) *ASCIISwitchboardCell {
 	if y+1 >= l.LineCount {
 		return nil
 	}
 	return &l.Cells[(y+1)*l.ColumnCount+x]
 }
 
-func (l *ASCIIStructure) CellAbove(x int, y int) *ASCIICell {
+func (l *ASCIISwitchboard) CellAbove(x int, y int) *ASCIISwitchboardCell {
 	if y == 0 {
 		return nil
 	}
 	return &l.Cells[(y-1)*l.ColumnCount+x]
 }
 
-func (l *ASCIIStructure) CellRightOf(x int, y int) *ASCIICell {
+func (l *ASCIISwitchboard) CellRightOf(x int, y int) *ASCIISwitchboardCell {
 	if x+1 >= l.ColumnCount {
 		return nil
 	}
 	return &l.Cells[y*l.ColumnCount+x+1]
 }
 
-func (l *ASCIIStructure) CellLeftOf(x int, y int) *ASCIICell {
+func (l *ASCIISwitchboard) CellLeftOf(x int, y int) *ASCIISwitchboardCell {
 	if x == 0 {
 		return nil
 	}
 	return &l.Cells[y*l.ColumnCount+x-1]
 }
 
-func (c *ASCIICell) ConnectsToTop() bool {
+func (c *ASCIISwitchboardCell) ConnectsToTop() bool {
 	return c.Connections&ConnectTop == ConnectTop
 }
 
-func (c *ASCIICell) ConnectsToBottom() bool {
+func (c *ASCIISwitchboardCell) ConnectsToBottom() bool {
 	return c.Connections&ConnectBottom == ConnectBottom
 }
 
-func (c *ASCIICell) ConnectsToLeft() bool {
+func (c *ASCIISwitchboardCell) ConnectsToLeft() bool {
 	return c.Connections&ConnectLeft == ConnectLeft
 }
 
-func (c *ASCIICell) ConnectsToRight() bool {
+func (c *ASCIISwitchboardCell) ConnectsToRight() bool {
 	return c.Connections&ConnectRight == ConnectRight
 }
 
-func MakeLabel(cells []*ASCIICell, kind ASCIICellType) {
+func MakeLabel(cells []*ASCIISwitchboardCell, kind ASCIICellType) {
 
 }
 
-func MakeBlock(cells []*ASCIICell, kind ASCIICellType) {
+func MakeBlock(cells []*ASCIISwitchboardCell, kind ASCIICellType) {
 	for i, c := range cells {
 		if kind == TrackHorizontalBlock {
 			c.Connections = ConnectLeft | ConnectRight

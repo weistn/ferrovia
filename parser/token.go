@@ -22,7 +22,6 @@ const (
 	TokenBlockComment
 	TokenAsterisk
 	TokenSlash
-	TokenBackslash
 	TokenDash
 	TokenPipe
 	TokenAt
@@ -31,11 +30,6 @@ const (
 	TokenOpenBraces
 	TokenCloseBraces
 	TokenComma
-
-	TokenRailway
-	TokenGround
-	TokenLayer
-	TokenEnd
 
 	// TokenDot ...
 	TokenDot
@@ -66,8 +60,6 @@ const (
 	TokenOpenBracket
 	// TokenCloseBracket ...
 	TokenCloseBracket
-	// TokenBacktick ...
-	TokenBacktick
 	// TokenColon ...
 	TokenColon
 	// TokenSemicolon ...
@@ -333,6 +325,35 @@ func (t *tokenizer) scan(file int, str string, i int) (token *Token, pos int) {
 		token := &Token{Kind: TokenString, StringValue: string(value), Location: encodeRange(file, str, i, j+1)}
 		return token, j + 1
 	}
+	if ch == '`' {
+		value := make([]byte, 0, 100)
+		j := i + 1
+		for ; j < len(str); j++ {
+			ch = str[j]
+			if ch == '`' {
+				break
+			}
+			if ch == '\\' {
+				k, s, _, ok := t.scanEscapeSequence(str, j+1)
+				if !ok {
+					j2 := t.skipBacktickString(str, j)
+					loc := encodeRange(file, str, j, j2)
+					return t.errorToken(errlog.ErrorIllegalString, loc), j2
+				}
+				j = k
+				value = append(value, []byte(s)...)
+			} else {
+				value = append(value, ch)
+			}
+		}
+		if ch != '`' {
+			j2 := t.skipBacktickString(str, j)
+			loc := encodeRange(file, str, j, j2)
+			return t.errorToken(errlog.ErrorIllegalString, loc), j2
+		}
+		token := &Token{Kind: TokenIdentifier, StringValue: string(value), Location: encodeRange(file, str, i, j+1)}
+		return token, j + 1
+	}
 	if ch == '\'' {
 		var value rune
 		j := i + 1
@@ -468,6 +489,22 @@ func (t *tokenizer) skipString(str string, i int) (pos int) {
 			continue
 		}
 		if (!escaped && ch == '"') || ch == '\n' || ch == '\r' {
+			break
+		}
+		escaped = false
+	}
+	return i
+}
+
+func (t *tokenizer) skipBacktickString(str string, i int) (pos int) {
+	escaped := false
+	for ; i < len(str); i++ {
+		ch := str[i]
+		if !escaped && ch == '\\' {
+			escaped = true
+			continue
+		}
+		if (!escaped && ch == '`') || ch == '\n' || ch == '\r' {
 			break
 		}
 		escaped = false

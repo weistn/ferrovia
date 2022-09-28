@@ -12,10 +12,10 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/weistn/ferrovia/errlog"
 	"github.com/weistn/ferrovia/interpreter"
-	"github.com/weistn/ferrovia/model/structure"
+	"github.com/weistn/ferrovia/model"
 	"github.com/weistn/ferrovia/model/tracks"
 	"github.com/weistn/ferrovia/parser"
-	"github.com/weistn/ferrovia/view/switchtower"
+	"github.com/weistn/ferrovia/view/switchboard"
 	"github.com/weistn/ferrovia/view/tracks2d"
 	"github.com/weistn/goui"
 
@@ -37,15 +37,15 @@ var demodata string = `{
 }`
 */
 
-//go:embed view/*.html view/*.css view/*.js view/fonts view/switchtower/*.js view/switchtower/*.css view/tracks2d/*.js view/tracks2d/*.css
+//go:embed view/*.html view/*.css view/*.js view/fonts view/switchboard/*.js view/switchboard/*.css view/tracks2d/*.js view/tracks2d/*.css
 var uiFS embed.FS
 
 var window *goui.Window
 
-func loadFile(name string) (*tracks.TrackSystem, []*structure.ASCIIStructure, error) {
+func loadFile(name string) (*model.Model, error) {
 	data, err := ioutil.ReadFile(name)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	log := errlog.NewErrorLog()
@@ -54,33 +54,33 @@ func loadFile(name string) (*tracks.TrackSystem, []*structure.ASCIIStructure, er
 	file := p.Parse(fileId, string(data))
 	if log.HasErrors() {
 		log.Print()
-		return nil, nil, errors.New("parsing Error")
+		return nil, errors.New("parsing Error")
 	}
 
 	b := interpreter.NewInterpreter(log)
-	ts, layouts := b.Process(file)
+	m := b.Process(file)
 	if log.HasErrors() {
 		log.Print()
-		return nil, nil, errors.New("interpreter error")
+		return nil, errors.New("interpreter error")
 	}
 
-	return ts, layouts, nil
+	return m, nil
 }
 
 func showFile(filename string) error {
-	ts, layouts, err := loadFile(filename)
+	model, err := loadFile(filename)
 	if err != nil {
 		return err
 	}
-	ts.Name = "Demo"
+	model.Name = "Demo"
 
-	canvas := tracks2d.Render(ts)
+	canvas := tracks2d.Render(model)
 	if err := window.SendEvent("canvas", canvas); err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		return err
 	}
 
-	layout := switchtower.Render(layouts)
+	layout := switchboard.Render(model.Switchboards)
 	if err = window.SendEvent("layout", layout); err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		return err

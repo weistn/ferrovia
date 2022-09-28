@@ -4,7 +4,7 @@ import (
 	"unicode"
 
 	"github.com/weistn/ferrovia/errlog"
-	. "github.com/weistn/ferrovia/model/structure"
+	. "github.com/weistn/ferrovia/model/switchboard"
 )
 
 type scanDirection int
@@ -16,8 +16,8 @@ const (
 	scanDownwards
 )
 
-func processASCIIStructure(lines []string, loc errlog.LocationRange, log *errlog.ErrorLog) *ASCIIStructure {
-	l := &ASCIIStructure{LineCount: len(lines), Lines: lines, Location: loc}
+func processASCIIStructure(lines []string, loc errlog.LocationRange, log *errlog.ErrorLog) *ASCIISwitchboard {
+	l := &ASCIISwitchboard{LineCount: len(lines), Lines: lines, Location: loc}
 	for _, line := range lines {
 		c := 0
 		for range line {
@@ -27,17 +27,17 @@ func processASCIIStructure(lines []string, loc errlog.LocationRange, log *errlog
 			l.ColumnCount = c
 		}
 	}
-	l.Cells = make([]ASCIICell, l.LineCount*l.ColumnCount)
+	l.Cells = make([]ASCIISwitchboardCell, l.LineCount*l.ColumnCount)
 	for y, line := range lines {
 		for x, r := range line {
-			l.Cells[y*l.ColumnCount+x] = ASCIICell{Rune: r, X: x, Y: y}
+			l.Cells[y*l.ColumnCount+x] = ASCIISwitchboardCell{Rune: r, X: x, Y: y}
 		}
 	}
 
 	// Create lines of cells
-	var cellLines [][]*ASCIICell
+	var cellLines [][]*ASCIISwitchboardCell
 	for y := 0; y < l.LineCount; y++ {
-		var cellLine []*ASCIICell
+		var cellLine []*ASCIISwitchboardCell
 		for x := 0; x < l.ColumnCount; x++ {
 			cellLine = append(cellLine, l.Cell(x, y))
 		}
@@ -45,9 +45,9 @@ func processASCIIStructure(lines []string, loc errlog.LocationRange, log *errlog
 	}
 
 	// Create columns of cells
-	var cellColumns [][]*ASCIICell
+	var cellColumns [][]*ASCIISwitchboardCell
 	for x := 0; x < l.ColumnCount; x++ {
-		var cellColumn []*ASCIICell
+		var cellColumn []*ASCIISwitchboardCell
 		for y := 0; y < l.LineCount; y++ {
 			cellColumn = append(cellColumn, l.Cell(x, y))
 		}
@@ -176,7 +176,7 @@ func processASCIIStructure(lines []string, loc errlog.LocationRange, log *errlog
 	return l
 }
 
-func processCells(l *ASCIIStructure, cells []*ASCIICell, pos int, dir scanDirection, log *errlog.ErrorLog) {
+func processCells(l *ASCIISwitchboard, cells []*ASCIISwitchboardCell, pos int, dir scanDirection, log *errlog.ErrorLog) {
 	inc := 1
 	if dir == scanLeft || dir == scanUpwards {
 		inc = -1

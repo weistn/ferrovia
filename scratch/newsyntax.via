@@ -1,0 +1,56 @@
+switchboard {
+    Main ----Gleis 1---/------- Main
+          @--Gleis 2---/--Gleis 2b-----@
+}
+
+tracks {
+    G1
+    @(`Gleis 1`)
+    G1
+    W10( G05 )
+    G4
+}
+
+tracks {
+    @(`Gleis 2`)
+    2 * G1
+    W10
+    G4
+}
+
+tracks {
+    mountains
+    @(Main)
+    6 * R6
+    Flex(80 cm)
+    2 * G1
+    G05
+    6 * R6
+}
+
+// Same length as W10, but simply straight
+tracks GW10() {
+    G1
+    G05
+}
+
+layer mountains {
+    color(red)
+}
+
+/*
+loco BR01 {
+    DCC(3)
+    Image("./br03.jpg")
+}
+
+train Rheingold {
+    Wagon(303 mm) Wagon(303 mm) Wagon(303 mm) Wagon(303 mm) BR01
+}
+*/
+
+ground {
+    top(0 cm)
+	left(0 cm)
+	polygon([530 cm, 335 cm], [530 cm, 385 cm], [0 cm, 385 cm], [0 cm, 335 cm])
+}
