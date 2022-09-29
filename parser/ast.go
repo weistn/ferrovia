@@ -5,20 +5,20 @@ import (
 )
 
 type File struct {
-	Statements []IStatement
+	Statements []IDirective
 	Location   errlog.Location
 }
 
-type IStatement interface {
+type IDirective interface {
 }
 
-// Implements IStatement
+// Implements IDirective
 type GroundPlate struct {
 	Expressions []IExpression
 	Location    errlog.LocationRange
 }
 
-// Implements IStatement
+// Implements IDirective
 type Switchboard struct {
 	Name          *Token
 	RawText       string
@@ -26,14 +26,14 @@ type Switchboard struct {
 	LocationText  errlog.LocationRange
 }
 
-// Implements IStatement
+// Implements IDirective
 type Layer struct {
 	Name        *Token
 	Expressions []IExpression
 	Location    errlog.LocationRange
 }
 
-// Implements IStatement
+// Implements IDirective
 type Tracks struct {
 	Name        *Token
 	Parameters  []*Parameter

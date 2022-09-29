@@ -56,7 +56,7 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 		}
 		switch t := s.(type) {
 		case *parser.GroundPlate:
-
+			b.processGround(t)
 		case *parser.Layer:
 			b.processLayer(t)
 		case *parser.Switchboard:
@@ -103,6 +103,16 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 	}
 
 	return b.model
+}
+
+func (b *Interpreter) processGround(ast *parser.GroundPlate) {
+	ground := &model.GroundPlate{}
+	ctx := &GroundContext{Ground: ground}
+	err := b.ProcessExpressions(ctx, ast.Expressions)
+	if err != nil {
+		return
+	}
+	b.model.GroundPlates = append(b.model.GroundPlates, ground)
 }
 
 func (b *Interpreter) processSwitchboard(ast *parser.Switchboard) {
@@ -263,4 +273,186 @@ func (b *Interpreter) computeLocationOfConnectedTracks(track *tracks.Track) {
 		c2.Track.Tag()
 		b.computeLocationOfConnectedTracks(c2.Track)
 	}
+}
+
+// The error returned (if any) is already logged. It just indicates that something went wrong
+func (b *Interpreter) ProcessExpressions(ctx IContext, ast []parser.IExpression) *errlog.Error {
+	for _, exp := range ast {
+		result, err := b.evalExpression(ctx, exp)
+		if err != nil {
+			b.errlog.AddError(err)
+			return err
+		}
+		if result != nil && result.Context != nil {
+			ctx = result.Context
+		}
+	}
+	return nil
+}
+
+func (b *Interpreter) evalExpression(ctx IContext, expr parser.IExpression) (*ExprValue, *errlog.Error) {
+	switch t := expr.(type) {
+	case *parser.CallExpression:
+		ident, ok := t.Func.(*parser.IdentifierExpression)
+		if !ok {
+			// TODO: Location
+			return nil, errlog.NewError(errlog.ErrorNotAMethod, errlog.LocationRange{})
+		}
+		var args []*ExprValue
+		for _, a := range t.Arguments {
+			arg, err := b.evalExpression(ctx, a)
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+		}
+		// TODO: Location
+		return b.call(errlog.LocationRange{}, ctx, ident.Identifier.StringValue, args...)
+	case *parser.IdentifierExpression:
+		// TODO: The identifier could be a variable as well
+		// TODO: Location
+		return b.call(errlog.LocationRange{}, ctx, t.Identifier.StringValue)
+	case *parser.BinaryExpression:
+		return b.evalBinaryExpression(ctx, t)
+	case *parser.DimensionExpression:
+		return b.evalDimensionExpression(ctx, t)
+	case *parser.ConstantExpression:
+		result := &ExprValue{}
+		if t.Value.Kind == parser.TokenInteger {
+			result.Type = numberType
+			// TODO: Check range
+			result.NumberValue = float64(t.Value.IntegerValue.Int64())
+		} else if t.Value.Kind == parser.TokenFloat {
+			result.Type = numberType
+			// TODO: Check range
+			result.NumberValue, _ = t.Value.FloatValue.Float64()
+		}
+		return result, nil
+	case *parser.VectorExpression:
+		return b.evalVectorExpression(ctx, t)
+	default:
+		panic("TODO")
+	}
+}
+
+func (b *Interpreter) evalVectorExpression(ctx IContext, ast *parser.VectorExpression) (*ExprValue, *errlog.Error) {
+	result := &ExprValue{Type: vectorType}
+	for _, expr := range ast.Values {
+		v, err := b.evalExpression(ctx, expr)
+		if err != nil {
+			return nil, err
+		}
+		result.VectorValue = append(result.VectorValue, v)
+	}
+	return result, nil
+}
+
+func (b *Interpreter) evalDimensionExpression(ctx IContext, ast *parser.DimensionExpression) (*ExprValue, *errlog.Error) {
+	left, err := b.evalExpression(ctx, ast.Value)
+	if err != nil {
+		return nil, err
+	}
+	switch ast.Dimension.StringValue {
+	case "mm", "deg":
+		return left, nil
+	case "cm":
+		if left.Type == numberType {
+			result := &ExprValue{Type: numberType}
+			result.NumberValue = left.NumberValue * 10
+			return result, nil
+		}
+		return nil, errlog.NewError(errlog.ErrorTypeMismtach, ast.Dimension.Location)
+	case "m":
+		if left.Type == numberType {
+			result := &ExprValue{Type: numberType}
+			result.NumberValue = left.NumberValue * 1000
+			return result, nil
+		}
+		return nil, errlog.NewError(errlog.ErrorTypeMismtach, ast.Dimension.Location)
+	}
+	panic("Oooops")
+}
+
+func (b *Interpreter) evalBinaryExpression(ctx IContext, ast *parser.BinaryExpression) (*ExprValue, *errlog.Error) {
+	left, err := b.evalExpression(ctx, ast.Left)
+	if err != nil {
+		return nil, err
+	}
+	switch ast.Op.Kind {
+	case parser.TokenLogicalAnd:
+		b, err := left.ToBool(ast.Op.Location)
+		if err != nil {
+			return nil, err
+		}
+		if !b {
+			return &ExprValue{Type: numberType, NumberValue: 0}, nil
+		}
+	case parser.TokenLogicalOr:
+		b, err := left.ToBool(ast.Op.Location)
+		if err != nil {
+			return nil, err
+		}
+		if b {
+			return &ExprValue{Type: numberType, NumberValue: 1}, nil
+		}
+	}
+
+	right, err := b.evalExpression(ctx, ast.Right)
+	if err != nil {
+		return nil, err
+	}
+
+	switch ast.Op.Kind {
+	case parser.TokenLogicalAnd:
+		return left.LogicalAnd(right, ast.Op.Location)
+	case parser.TokenLogicalOr:
+		return left.LogicalOr(right, ast.Op.Location)
+	case parser.TokenEqual:
+		return left.Equal(right, ast.Op.Location)
+	case parser.TokenNotEqual:
+		return left.NotEqual(right, ast.Op.Location)
+	case parser.TokenLessOrEqual:
+		return left.LessOrEqual(right, ast.Op.Location)
+	case parser.TokenGreaterOrEqual:
+		return left.GreaterOrEqual(right, ast.Op.Location)
+	case parser.TokenLess:
+		return left.Less(right, ast.Op.Location)
+	case parser.TokenGreater:
+		return left.Greater(right, ast.Op.Location)
+	case parser.TokenPlus:
+		return left.Plus(right, ast.Op.Location)
+	case parser.TokenDash:
+		return left.Minus(right, ast.Op.Location)
+	case parser.TokenAsterisk:
+		return left.Mul(right, ast.Op.Location)
+	case parser.TokenSlash:
+		return left.Div(right, ast.Op.Location)
+	case parser.TokenPercent:
+		return left.Rem(right, ast.Op.Location)
+	case parser.TokenAmpersand:
+		return left.BinaryAnd(right, ast.Op.Location)
+	case parser.TokenPipe:
+		return left.BinaryOr(right, ast.Op.Location)
+	case parser.TokenCaret:
+		return left.BinaryXor(right, ast.Op.Location)
+	case parser.TokenBitClear:
+		return left.BinaryAndNot(right, ast.Op.Location)
+	case parser.TokenShiftLeft:
+		return left.Lsh(right, ast.Op.Location)
+	case parser.TokenShiftRight:
+		return left.Rsh(right, ast.Op.Location)
+	}
+	panic("Oooops")
+}
+
+func (b *Interpreter) call(loc errlog.LocationRange, ctx IContext, name string, args ...*ExprValue) (*ExprValue, *errlog.Error) {
+	result, done, err := ctx.Call(b, loc, name, args...)
+	if err != nil {
+		return nil, err
+	}
+	if done {
+		return result, nil
+	}
+	// TODO: Try the global context
+	return nil, errlog.NewError(errlog.ErrorUnknownMethod, loc, name)
 }

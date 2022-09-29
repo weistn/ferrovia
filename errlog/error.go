@@ -29,6 +29,8 @@ const (
 	ErrorNamedRailwayUsedTwice
 	ErrorTypeMismtach
 	ErrorArgumentCountMismatch
+	ErrorUnknownMethod
+	ErrorNotAMethod
 )
 
 type Error struct {
@@ -102,6 +104,12 @@ func (e *Error) ToString(log *ErrorLog) string {
 		return "Malformed layout: " + e.args[0]
 	case ErrorArgumentCountMismatch:
 		return fmt.Sprintf("Argument count mismatch. Expected %v parameters", e.args[0])
+	case ErrorUnknownMethod:
+		return fmt.Sprintf("The method %v is not known in this context", e.args[0])
+	case ErrorNotAMethod:
+		return "The provided expression is not a method"
+	case ErrorTypeMismtach:
+		return "Type mismatch"
 	}
 	println(e.code)
 	panic("Should not happen")

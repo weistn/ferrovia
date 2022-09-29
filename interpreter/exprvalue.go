@@ -9,6 +9,7 @@ type ExprValue struct {
 	StringValue string
 	NumberValue float64
 	VectorValue []*ExprValue
+	Context     IContext
 }
 
 func (e *ExprValue) LogicalOr(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
@@ -326,4 +327,11 @@ func (e *ExprValue) ToBool(loc errlog.LocationRange) (bool, *errlog.Error) {
 		return len(e.VectorValue) != 0, nil
 	}
 	return false, errlog.NewError(errlog.ErrorTypeMismtach, loc)
+}
+
+func (e *ExprValue) ToVector(loc errlog.LocationRange) ([]*ExprValue, *errlog.Error) {
+	if e.Type == vectorType {
+		return e.VectorValue, nil
+	}
+	return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 }

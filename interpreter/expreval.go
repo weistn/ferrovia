@@ -1,21 +1,6 @@
 package interpreter
 
-import (
-	"github.com/weistn/ferrovia/errlog"
-	"github.com/weistn/ferrovia/parser"
-)
-
-func evalExpression(b *Interpreter, ast parser.IExpression) (*ExprValue, *errlog.Error) {
-	switch t := ast.(type) {
-	case *parser.BinaryExpression:
-		return evalBinaryExpression(b, t)
-	case *parser.DimensionExpression:
-		return evalDimensionExpression(b, t)
-	default:
-		panic("TODO")
-	}
-}
-
+/*
 func evalDimensionExpression(b *Interpreter, ast *parser.DimensionExpression) (*ExprValue, *errlog.Error) {
 	left, err := evalExpression(b, ast.Value)
 	if err != nil {
@@ -113,7 +98,9 @@ func evalBinaryExpression(b *Interpreter, ast *parser.BinaryExpression) (*ExprVa
 	}
 	panic("Oooops")
 }
+*/
 
+/*
 func evalFloatExpression(b *Interpreter, ast parser.IExpression, loc errlog.LocationRange) (float64, *errlog.Error) {
 	v, err := evalExpression(b, ast)
 	if err != nil {
@@ -140,3 +127,4 @@ func evalVectorExpression(b *Interpreter, ast parser.IExpression, loc errlog.Loc
 	}
 	return v.VectorValue, nil
 }
+*/
