@@ -335,3 +335,10 @@ func (e *ExprValue) ToVector(loc errlog.LocationRange) ([]*ExprValue, *errlog.Er
 	}
 	return nil, errlog.NewError(errlog.ErrorTypeMismtach, loc)
 }
+
+func (e *ExprValue) ToString(loc errlog.LocationRange) (string, *errlog.Error) {
+	if e.Type == stringType {
+		return e.StringValue, nil
+	}
+	return "", errlog.NewError(errlog.ErrorTypeMismtach, loc)
+}

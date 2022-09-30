@@ -128,12 +128,24 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 		b.errlog.LogError(errlog.ErrorDuplicateLayer, ast.Location, ast.Name.StringValue)
 		return
 	}
-	// TODO: execute expressions
-	b.model.Tracks.NewLayer(ast.Name.StringValue)
+	ctx := &LayerContext{layer: &tracks.TrackLayer{}}
+	err := b.ProcessExpressions(ctx, ast.Expressions)
+	if err != nil {
+		return
+	}
+	if _, ok := b.model.Tracks.Layers[ctx.layer.Name]; ok {
+		b.errlog.LogError(errlog.ErrorDuplicateLayer, ast.Location, ctx.layer.Name)
+		return
+	}
+	b.model.Tracks.AddLayer(ctx.layer)
 }
 
 func (b *Interpreter) processTracks(ast *parser.Tracks) {
-	// TODO: execute expressions
+	ctx := &TrackContext{}
+	err := b.ProcessExpressions(ctx, ast.Expressions)
+	if err != nil {
+		return
+	}
 }
 
 /*

@@ -13,6 +13,7 @@ type TrackSystem struct {
 type TrackLayer struct {
 	TrackSystem *TrackSystem
 	Name        string
+	Color       string
 	Tracks      []*Track
 }
 
@@ -85,17 +86,15 @@ func RegisterTrackFactory(kind string, fn TrackFactoryFunc) {
 
 func NewTrackSystem() *TrackSystem {
 	ts := &TrackSystem{marks: make(map[string]*TrackMark), Layers: make(map[string]*TrackLayer)}
-	ts.NewLayer("")
+	ts.AddLayer(&TrackLayer{Name: ""})
 	return ts
 }
 
-func (ts *TrackSystem) NewLayer(name string) *TrackLayer {
-	if _, ok := ts.Layers[name]; ok {
+func (ts *TrackSystem) AddLayer(l *TrackLayer) {
+	if _, ok := ts.Layers[l.Name]; ok {
 		panic("Duplicate layer name")
 	}
-	l := &TrackLayer{TrackSystem: ts, Name: name}
-	ts.Layers[name] = l
-	return l
+	ts.Layers[l.Name] = l
 }
 
 func (ts *TrackSystem) GetMark(name string) *TrackMark {
