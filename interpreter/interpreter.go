@@ -41,7 +41,7 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 		case *parser.Switchboard:
 			// Do nothing by intention
 		case *parser.Tracks:
-			if t.Name.StringValue != "" {
+			if t.Name != nil {
 				b.identifiers[t.Name.StringValue] = s
 			}
 		default:
@@ -81,7 +81,9 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 		case *parser.Switchboard:
 			// Do nothing by intention
 		case *parser.Tracks:
-			b.processTracks(t)
+			if t.Name == nil {
+				b.processTracks(t)
+			}
 		default:
 			panic("Ooooops")
 		}
@@ -141,7 +143,7 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 }
 
 func (b *Interpreter) processTracks(ast *parser.Tracks) {
-	ctx := &TrackContext{}
+	ctx := &TrackContext{layer: b.model.Tracks.Layers[""]}
 	err := b.ProcessExpressions(ctx, ast.Expressions)
 	if err != nil {
 		return

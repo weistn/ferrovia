@@ -16,13 +16,13 @@ func (c *LayerContext) Call(b *Interpreter, loc errlog.LocationRange, name strin
 	switch name {
 	case "name":
 		if len(args) != 1 {
-			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
 		c.layer.Name, err = args[0].ToString(loc)
 		return nil, true, err
 	case "color":
 		if len(args) != 1 {
-			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
 		c.layer.Color, err = args[0].ToString(loc)
 		return nil, true, err

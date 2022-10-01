@@ -16,31 +16,31 @@ func (c *GroundContext) Call(b *Interpreter, loc errlog.LocationRange, name stri
 	switch name {
 	case "top":
 		if len(args) != 1 {
-			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
 		c.Ground.Top, err = args[0].ToFloat(loc)
 		return nil, true, err
 	case "left":
 		if len(args) != 1 {
-			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
 		c.Ground.Left, err = args[0].ToFloat(loc)
 		return nil, true, err
 	case "width":
 		if len(args) != 1 {
-			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
 		c.Ground.Width, err = args[0].ToFloat(loc)
 		return nil, true, err
 	case "height":
 		if len(args) != 1 {
-			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
 		c.Ground.Height, err = args[0].ToFloat(loc)
 		return nil, true, err
 	case "polygon":
 		if len(args) < 3 {
-			b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
 		for _, arg := range args {
 			vector, err := arg.ToVector(loc)
@@ -48,7 +48,7 @@ func (c *GroundContext) Call(b *Interpreter, loc errlog.LocationRange, name stri
 				return nil, true, err
 			}
 			if len(vector) != 2 {
-				b.errlog.AddError(errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1"))
+				return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 			}
 			x, err := vector[0].ToFloat(loc)
 			if err != nil {
