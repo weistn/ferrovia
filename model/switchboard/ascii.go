@@ -83,6 +83,7 @@ type ASCIISwitchboardCell struct {
 	Rune        rune
 	X           int
 	Y           int
+	Text        string
 	Anchor      *ASCIISwitchboardCell
 }
 
@@ -138,7 +139,20 @@ func (c *ASCIISwitchboardCell) ConnectsToRight() bool {
 }
 
 func MakeLabel(cells []*ASCIISwitchboardCell, kind ASCIICellType) {
-
+	var text string
+	for i, c := range cells {
+		text = text + string(c.Rune)
+		if kind == TrackHorizontalLabel {
+			c.Connections = ConnectLeft | ConnectRight
+		} else {
+			c.Connections = ConnectTop | ConnectBottom
+		}
+		c.Type = kind
+		if i > 0 {
+			c.Anchor = cells[0]
+		}
+	}
+	cells[0].Text = text
 }
 
 func MakeBlock(cells []*ASCIISwitchboardCell, kind ASCIICellType) {

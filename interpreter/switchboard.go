@@ -260,12 +260,14 @@ func processCells(l *ASCIISwitchboard, cells []*ASCIISwitchboardCell, pos int, d
 				} else {
 					MakeBlock(cells[i:i+4], TrackHorizontalBlock)
 				}
+				return
 			} else if (dir == scanUpwards || dir == scanLeft) && i >= 4 && cells[i-1].Rune == 'B' && cells[i-2].Rune == 'B' && cells[i-3].Rune == 'B' && !unicode.IsLetter(cells[i-4].Rune) && !unicode.IsDigit(cells[i-4].Rune) {
 				if dir == scanUpwards {
 					MakeBlock(cells[i-3:i+1], TrackVerticalBlock)
 				} else {
 					MakeBlock(cells[i-3:i+1], TrackHorizontalBlock)
 				}
+				return
 			}
 		}
 
@@ -274,9 +276,10 @@ func processCells(l *ASCIISwitchboard, cells []*ASCIISwitchboardCell, pos int, d
 			space := unicode.IsSpace(cell.Rune)
 			if space {
 				start += inc
+				space = false
 			}
 			var j int
-			for j = start; j >= 0 && j < len(cells); j++ {
+			for j = start; j >= 0 && j < len(cells); j += inc {
 				if unicode.IsLetter(cells[j].Rune) || unicode.IsDigit(cells[j].Rune) {
 					space = false
 					continue
@@ -293,13 +296,14 @@ func processCells(l *ASCIISwitchboard, cells []*ASCIISwitchboardCell, pos int, d
 			if start == j {
 				// Do nothing
 			} else if dir == scanDownwards {
-				MakeLabel(cells[start:j+1], TrackVerticalLabel)
+				MakeLabel(cells[start:j], TrackVerticalLabel)
 			} else if dir == scanRight {
-				MakeLabel(cells[start:j+1], TrackHorizontalLabel)
+				MakeLabel(cells[start:j], TrackHorizontalLabel)
 			} else if dir == scanUpwards {
-				MakeLabel(cells[start:j+1], TrackVerticalLabel)
+				MakeLabel(cells[start:j], TrackVerticalLabel)
 			} else {
-				MakeLabel(cells[j:start+1], TrackHorizontalLabel)
+				println(j, start, inc)
+				MakeLabel(cells[j:start], TrackHorizontalLabel)
 			}
 		}
 	}

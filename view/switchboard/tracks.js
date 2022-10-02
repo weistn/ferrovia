@@ -74,6 +74,8 @@ class TrackDiagram {
                 t = new TrackSimple(cell, obj.kind);
             } else if (obj.kind <= trackVerticalBlock) {
                 t = new TrackBlock(cell, obj.kind);
+            } else if (obj.kind == trackHorizontalLabel || obj.kind == trackVerticalLabel) {
+                t = new TrackLabel(cell, obj.kind, obj.t);
             } else {
                 throw "Oooops";
             }
@@ -246,6 +248,8 @@ const trackVerticalStopTop = 28;
 const trackVerticalStopBottom = 29;
 const trackHorizontalBlock = 30;
 const trackVerticalBlock = 31;
+const trackHorizontalLabel = 32;
+const trackVerticalLabel = 33;
 
 // Abstract base class.
 class TrackElement {
@@ -609,6 +613,56 @@ class TrackBlock extends TrackElement {
     }
  }
  
+ class TrackLabel extends TrackElement {
+    constructor(cell,kind, text) {
+        super(cell, kind);
+        this.text = text;
+    }
+
+    createSVG(svg) {
+        this.svgParent = svg;
+
+        if (this.kind == trackHorizontalLabel) {
+            var rect = document.createElementNS(svgNS, "rect");
+            rect.setAttribute("x", this.svgX());
+            rect.setAttribute("y", this.svgY() + cellHeight/3);
+            rect.setAttribute("width", cellWidth);
+            rect.setAttribute("height", cellHeight/3);
+            rect.classList.add("track");
+            this.svgParent.appendChild(rect);
+
+            var text = document.createElementNS(svgNS, "text");
+            text.setAttribute("x", this.svgX());
+            text.setAttribute("y", this.svgY() + cellHeight/3 - 2);
+            // text.setAttribute("text-anchor", "middle");
+            this.cdata = document.createTextNode(this.text);
+            text.appendChild(this.cdata);
+            text.classList.add("track-label");
+            this.svgParent.appendChild(text);
+        } else if (this.kind == trackVerticalLabel) {
+            var rect = document.createElementNS(svgNS, "rect");
+            rect.setAttribute("x", this.svgX() + cellWidth/3);
+            rect.setAttribute("y", this.svgY());
+            rect.setAttribute("width", cellWidth/3);
+            rect.setAttribute("height", cellHeight);
+            rect.classList.add("track");
+            this.svgParent.appendChild(rect);
+
+            var text = document.createElementNS(svgNS, "text");
+            text.setAttribute("x", this.svgX() + cellWidth);
+            text.setAttribute("y", this.svgY() + cellHeight/3 - 2);
+            // text.setAttribute("text-anchor", "middle");
+            text.setAttribute("transform", "rotate(90, " + (this.svgX() + cellWidth) + ", " + (this.svgY()) + ")");
+            this.cdata = document.createTextNode(this.text);
+            text.appendChild(this.cdata);
+            text.classList.add("track-label");
+            this.svgParent.appendChild(text);
+        } else {
+            throw("Ooooops")
+        }
+    }
+}
+
  /*****************************************************
  * 
  * Trains

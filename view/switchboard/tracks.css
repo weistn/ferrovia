@@ -1,5 +1,5 @@
 .tracks-bgline {
-    stroke: rgb(160,160,160);
+    stroke: rgb(180,180,180);
     stroke-width: 1;
 }
 
@@ -30,6 +30,11 @@
 .track-blocktext {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 10px;
+}
+
+.track-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
 }
 
 .trackdiagram-bg {

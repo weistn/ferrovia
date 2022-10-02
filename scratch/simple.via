@@ -1,6 +1,14 @@
 switchboard {
-    -------/---BBBB----/--
-    @------/---BBBB----/-@
+
+     -------/---BBBB----/-Gleis1-
+           ,'          ,'
+    @------/----BBBB---/--gleis2-.
+                                 |
+                                 B
+                                 1
+                                 |
+
+    `',.
 }
 
 ground {
@@ -13,6 +21,8 @@ tracks {
     @(100 cm, 100 cm, 0 cm, 90 deg)
     G1
     G1 R6 R6
+    `R-W10`
+    G1
 }
 
 tracks {
@@ -21,3 +31,18 @@ tracks {
     G1
     @(150 cm, 150 cm, 0 cm, 90 deg)
 }
+
+/*
+tracks {
+    G1
+    WR10(out, out(G1))
+    // Hier geht das leere Out weiter
+    G1
+    WR15(out(L10), out)
+    // Hier geht das leere Out weiter
+    G1 G1
+    WL15(out, in(R10))
+
+    WR15(join )
+}
+*/

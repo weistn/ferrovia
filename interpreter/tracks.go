@@ -76,13 +76,13 @@ func (c *TrackContext) Call(b *Interpreter, loc errlog.LocationRange, name strin
 	} else {
 		newTrack := c.layer.NewTrack(name)
 		if newTrack == nil {
+			// A track of this name does not exist.
 			return nil, false, nil
 		}
 		newTrack.SourceLocation = loc
-		if newTrack.Geometry.IncomingConnectionCount != 1 || newTrack.Geometry.OutgoingConnectionCount != 1 {
+		/* if newTrack.Geometry.IncomingConnectionCount != 1 || newTrack.Geometry.OutgoingConnectionCount != 1 {
 			panic("Track has more than one incoming or outgoing connections")
-		}
-		// Not a switch. Simply connect both ends
+		} */
 		con := newTrack.FirstConnection()
 		if c.anchor != nil {
 			l := tracks.NewTrackLocation(con, tracks.Vec3{c.anchor.x, c.anchor.y, c.anchor.z}, c.anchor.angle)
