@@ -59,6 +59,9 @@ class TrackDiagram {
 
     // Reconstructs a TrackDiagram from its JSON serialization.
     static deserialize(ser) {
+        var svg = document.getElementById("trackdiagram");
+        svg.innerHTML = "";
+        
         var dgrm = new TrackDiagram(ser.columns, ser.rows);
         
         // Deserialize all tracks and attach them to their cell
