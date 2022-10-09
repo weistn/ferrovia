@@ -3,6 +3,7 @@ package interpreter
 import (
 	"github.com/weistn/ferrovia/errlog"
 	"github.com/weistn/ferrovia/model/tracks"
+	"github.com/weistn/ferrovia/parser"
 )
 
 type pendingAnchor struct {
@@ -16,18 +17,86 @@ type pendingAnchor struct {
 type TrackContext struct {
 	layer *tracks.TrackLayer
 	// track *tracks.Track
-	first  *tracks.TrackConnection
-	last   *tracks.TrackConnection
-	anchor *pendingAnchor
+	first      *tracks.TrackConnection
+	last       *tracks.TrackConnection
+	anchor     *pendingAnchor
+	atFunc     FuncValue
+	layerFunc  FuncValue
+	trackFuncs map[string]*FuncValue
 }
 
+func NewTrackContext() *TrackContext {
+	ctx := &TrackContext{}
+	ctx.trackFuncs = make(map[string]*FuncValue)
+	ctx.layerFunc = FuncValue{
+		Name: "layer",
+		Func: func(b *Interpreter, c []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error) {
+			if len(args) != 1 {
+				return nil, b.errlog.LogError(errlog.ErrorArgumentCountMismatch, loc, "1")
+			}
+			name, err := b.evalToString(c, args[0])
+			if err != nil {
+				return nil, err
+			}
+			l, ok := b.model.Tracks.Layers[name]
+			if !ok {
+				return nil, b.errlog.LogError(errlog.ErrorUnknownLayer, loc, name)
+			}
+			ctx.layer = l
+			return nil, err
+		},
+	}
+	ctx.atFunc = FuncValue{
+		Name: "@",
+		Func: func(b *Interpreter, c []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error) {
+			if len(args) != 4 {
+				return nil, b.errlog.LogError(errlog.ErrorArgumentCountMismatch, loc, "1")
+			}
+			x, err := b.evalToFloat(c, args[0])
+			if err != nil {
+				return nil, err
+			}
+			y, err := b.evalToFloat(c, args[1])
+			if err != nil {
+				return nil, err
+			}
+			z, err := b.evalToFloat(c, args[2])
+			if err != nil {
+				return nil, err
+			}
+			angle, err := b.evalToFloat(c, args[3])
+			if err != nil {
+				return nil, err
+			}
+			if ctx.last == nil {
+				// Apply to the next track
+				ctx.anchor = &pendingAnchor{x: x, y: y, z: z, angle: angle}
+			} else {
+				// Apply to previous track
+				angle += 180
+				if angle > 360 {
+					angle -= 360
+				}
+				l := tracks.NewTrackLocation(ctx.last, tracks.Vec3{x, y, z}, angle)
+				if !ctx.last.Track.SetLocation(l) {
+					return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
+				}
+				b.tracksWithAnchor = append(b.tracksWithAnchor, ctx.last.Track)
+			}
+			return nil, nil
+		},
+	}
+	return ctx
+}
+
+/*
 // Returns (nil, false, nil) if the call could not be made, because the function is unknown.
 func (c *TrackContext) Call(b *Interpreter, loc errlog.LocationRange, name string, args ...*ExprValue) (*ExprValue, bool, *errlog.Error) {
 	if name == "layer" {
 		if len(args) != 1 {
 			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
-		name, err := args[0].ToString(loc)
+		name, err := b.ToString(args[0], loc)
 		if err != nil {
 			return nil, true, err
 		}
@@ -41,19 +110,19 @@ func (c *TrackContext) Call(b *Interpreter, loc errlog.LocationRange, name strin
 		if len(args) != 4 {
 			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
 		}
-		x, err := args[0].ToFloat(loc)
+		x, err := b.ToFloat(args[0], loc)
 		if err != nil {
 			return nil, true, err
 		}
-		y, err := args[1].ToFloat(loc)
+		y, err := b.ToFloat(args[1], loc)
 		if err != nil {
 			return nil, true, err
 		}
-		z, err := args[2].ToFloat(loc)
+		z, err := b.ToFloat(args[2], loc)
 		if err != nil {
 			return nil, true, err
 		}
-		angle, err := args[3].ToFloat(loc)
+		angle, err := b.ToFloat(args[3], loc)
 		if err != nil {
 			return nil, true, err
 		}
@@ -80,9 +149,6 @@ func (c *TrackContext) Call(b *Interpreter, loc errlog.LocationRange, name strin
 			return nil, false, nil
 		}
 		newTrack.SourceLocation = loc
-		/* if newTrack.Geometry.IncomingConnectionCount != 1 || newTrack.Geometry.OutgoingConnectionCount != 1 {
-			panic("Track has more than one incoming or outgoing connections")
-		} */
 		con := newTrack.FirstConnection()
 		if c.anchor != nil {
 			l := tracks.NewTrackLocation(con, tracks.Vec3{c.anchor.x, c.anchor.y, c.anchor.z}, c.anchor.angle)
@@ -99,5 +165,50 @@ func (c *TrackContext) Call(b *Interpreter, loc errlog.LocationRange, name strin
 		}
 		c.last = newTrack.SecondConnection()
 		return nil, true, nil
+	}
+}
+*/
+
+func (c *TrackContext) Lookup(b *Interpreter, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
+	switch name {
+	case "layer":
+		return &ExprValue{Type: funcType, FuncValue: &c.layerFunc}, nil
+	case "@":
+		return &ExprValue{Type: funcType, FuncValue: &c.atFunc}, nil
+	default:
+		if f, ok := c.trackFuncs[name]; ok {
+			return &ExprValue{Type: funcType, FuncValue: f}, nil
+		}
+		f := &FuncValue{}
+		f.Name = name
+		f.Func = func(b *Interpreter, ctx []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error) {
+			if len(args) != 0 {
+				return nil, b.errlog.LogError(errlog.ErrorArgumentCountMismatch, loc, "1")
+			}
+			newTrack := c.layer.NewTrack(name)
+			if newTrack == nil {
+				// A track of this name does not exist.
+				return nil, b.errlog.LogError(errlog.ErrorUnknownTrackType, loc, name)
+			}
+			newTrack.SourceLocation = loc
+			con := newTrack.FirstConnection()
+			if c.anchor != nil {
+				l := tracks.NewTrackLocation(con, tracks.Vec3{c.anchor.x, c.anchor.y, c.anchor.z}, c.anchor.angle)
+				if !con.Track.SetLocation(l) {
+					return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
+				}
+				b.tracksWithAnchor = append(b.tracksWithAnchor, con.Track)
+				c.anchor = nil
+			}
+			if c.last != nil {
+				c.last.Connect(con)
+			} else {
+				c.first = con
+			}
+			c.last = newTrack.SecondConnection()
+			return nil, nil
+		}
+		c.trackFuncs[name] = f
+		return &ExprValue{Type: funcType, FuncValue: f}, nil
 	}
 }

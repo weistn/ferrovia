@@ -87,6 +87,21 @@ func (p *Parser) parseBody() ([]IExpression, *errlog.Error) {
 		if err != nil {
 			return nil, err
 		}
+
+		//
+		// ContextExpression?
+		//
+		if _, ok := p.optional(TokenOpenBraces); ok {
+			statements, err := p.parseBody()
+			if err != nil {
+				return nil, err
+			}
+			if _, err := p.expect(TokenCloseBraces); err != nil {
+				return nil, err
+			}
+			expr = &ContextExpression{Object: expr, Statements: statements}
+		}
+
 		expressions = append(expressions, expr)
 	}
 	return expressions, nil
@@ -96,7 +111,7 @@ func (p *Parser) parseLayer(t *Token) (*Layer, *errlog.Error) {
 	l := &Layer{Location: t.Location}
 	var err *errlog.Error
 
-	// Parse optional name
+	// Parse name
 	l.Name, err = p.expect(TokenIdentifier)
 	if err != nil {
 		return nil, err
@@ -163,7 +178,7 @@ func (p *Parser) parseTracks(t *Token) (*Tracks, *errlog.Error) {
 }
 
 func (p *Parser) parseExpression() (IExpression, *errlog.Error) {
-	expr, err := p.parseCallExpression()
+	expr, err := p.parseDotExpression()
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +194,47 @@ func (p *Parser) parseExpression() (IExpression, *errlog.Error) {
 		return &BinaryExpression{Left: expr, Op: t, Right: expr2}, nil
 	}
 	return expr, nil
+}
+
+func (p *Parser) parseDotExpression() (IExpression, *errlog.Error) {
+	expr, err := p.parseCallExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	//
+	// DotExpression?
+	//
+	for {
+		if _, ok := p.optional(TokenDot); !ok {
+			return expr, nil
+		}
+		ident, err := p.expect(TokenIdentifier)
+		if err != nil {
+			return nil, err
+		}
+		dot := &DotExpression{Context: expr, Identifier: ident}
+		if _, ok := p.optional(TokenOpenParanthesis); ok {
+			var args []IExpression
+			for {
+				if _, ok := p.optional(TokenCloseParanthesis); ok {
+					break
+				}
+				if len(args) != 0 {
+					if _, err := p.expect(TokenComma); err != nil {
+						return nil, err
+					}
+				}
+				arg, err := p.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, arg)
+			}
+			dot.Arguments = args
+		}
+		expr = dot
+	}
 }
 
 func (p *Parser) parseCallExpression() (IExpression, *errlog.Error) {

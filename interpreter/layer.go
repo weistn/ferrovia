@@ -3,29 +3,38 @@ package interpreter
 import (
 	"github.com/weistn/ferrovia/errlog"
 	"github.com/weistn/ferrovia/model/tracks"
+	"github.com/weistn/ferrovia/parser"
 )
 
 // Implements IContext
 type LayerContext struct {
 	layer *tracks.TrackLayer
+	color *FuncValue
 }
 
-// Returns (nil, false, nil) if the call could not be made, because the function is unknown.
-func (c *LayerContext) Call(b *Interpreter, loc errlog.LocationRange, name string, args ...*ExprValue) (*ExprValue, bool, *errlog.Error) {
-	var err *errlog.Error
-	switch name {
-	case "name":
-		if len(args) != 1 {
-			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
-		}
-		c.layer.Name, err = args[0].ToString(loc)
-		return nil, true, err
-	case "color":
-		if len(args) != 1 {
-			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
-		}
-		c.layer.Color, err = args[0].ToString(loc)
-		return nil, true, err
+func NewLayerContext(layer *tracks.TrackLayer) *LayerContext {
+	ctx := &LayerContext{layer: layer}
+	ctx.color = &FuncValue{
+		Name: "color",
+		Func: func(b *Interpreter, c []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error) {
+			if len(args) != 1 {
+				return nil, b.errlog.LogError(errlog.ErrorArgumentCountMismatch, loc, "1")
+			}
+			arg, err := b.evalExpression(c, args[0])
+			if arg != nil {
+				return nil, err
+			}
+			ctx.layer.Color, err = b.ToString(arg, loc)
+			return nil, err
+		},
 	}
-	return nil, false, nil
+	return ctx
+}
+
+func (c *LayerContext) Lookup(b *Interpreter, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
+	switch name {
+	case "color":
+		return &ExprValue{Type: funcType, FuncValue: c.color}, nil
+	}
+	return nil, nil
 }

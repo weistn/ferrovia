@@ -10,3 +10,5 @@ type BasicType struct {
 var numberType = &BasicType{Name: "number"}
 var stringType = &BasicType{Name: "string"}
 var vectorType = &BasicType{Name: "vector"}
+var funcType = &BasicType{Name: "func"}
+var contextType = &BasicType{Name: "context"}

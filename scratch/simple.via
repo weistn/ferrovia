@@ -33,14 +33,12 @@ tracks {
 /*
 tracks {
     G1
-    WR10(out, out(G1))
-    // Hier geht das leere Out weiter
-    G1
-    WR15(out(L10), out)
-    // Hier geht das leere Out weiter
+    isolate
+    detector(8)
+    WR15(right(L10), dcc(110))
     G1 G1
-    WL15(out, in(R10))
+    WR15(bright(L10), dcc(120))
 
-    WR15(join )
+    DWW15(left(G10), straight(G10))
 }
 */

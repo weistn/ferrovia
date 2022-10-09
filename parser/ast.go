@@ -78,6 +78,18 @@ type CallExpression struct {
 }
 
 // Implements IExpression
+type DotExpression struct {
+	Context    IExpression
+	Identifier *Token
+	Arguments  []IExpression
+}
+
+type ContextExpression struct {
+	Object     IExpression
+	Statements []IExpression
+}
+
+// Implements IExpression
 type VectorExpression struct {
 	Values   []IExpression
 	Location errlog.LocationRange

@@ -110,7 +110,7 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 func (b *Interpreter) processGround(ast *parser.GroundPlate) {
 	ground := &model.GroundPlate{}
 	ctx := &GroundContext{Ground: ground}
-	err := b.ProcessExpressions(ctx, ast.Expressions)
+	err := b.processStatements([]IContext{ctx}, ast.Expressions)
 	if err != nil {
 		return
 	}
@@ -130,13 +130,9 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 		b.errlog.LogError(errlog.ErrorDuplicateLayer, ast.Location, ast.Name.StringValue)
 		return
 	}
-	ctx := &LayerContext{layer: &tracks.TrackLayer{}}
-	err := b.ProcessExpressions(ctx, ast.Expressions)
+	ctx := &LayerContext{layer: &tracks.TrackLayer{Name: ast.Name.StringValue}}
+	err := b.processStatements([]IContext{ctx}, ast.Expressions)
 	if err != nil {
-		return
-	}
-	if _, ok := b.model.Tracks.Layers[ctx.layer.Name]; ok {
-		b.errlog.LogError(errlog.ErrorDuplicateLayer, ast.Location, ctx.layer.Name)
 		return
 	}
 	b.model.Tracks.AddLayer(ctx.layer)
@@ -144,7 +140,7 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 
 func (b *Interpreter) processTracks(ast *parser.Tracks) {
 	ctx := &TrackContext{layer: b.model.Tracks.Layers[""]}
-	err := b.ProcessExpressions(ctx, ast.Expressions)
+	err := b.processStatements([]IContext{ctx}, ast.Expressions)
 	if err != nil {
 		return
 	}
@@ -290,42 +286,56 @@ func (b *Interpreter) computeLocationOfConnectedTracks(track *tracks.Track) {
 }
 
 // The error returned (if any) is already logged. It just indicates that something went wrong
-func (b *Interpreter) ProcessExpressions(ctx IContext, ast []parser.IExpression) *errlog.Error {
+func (b *Interpreter) processStatements(ctx []IContext, ast []parser.IExpression) *errlog.Error {
 	for _, exp := range ast {
 		result, err := b.evalExpression(ctx, exp)
 		if err != nil {
-			b.errlog.AddError(err)
 			return err
 		}
-		if result != nil && result.Context != nil {
-			ctx = result.Context
+		_, err = b.expandFunc(ctx, result, errlog.LocationRange{})
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (b *Interpreter) evalExpression(ctx IContext, expr parser.IExpression) (*ExprValue, *errlog.Error) {
+func (b *Interpreter) lookup(ctx []IContext, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
+	for _, c := range ctx {
+		result, err := c.Lookup(b, loc, name)
+		if err != nil || result != nil {
+			return result, err
+		}
+	}
+	return nil, b.errlog.LogError(errlog.ErrorUnknownMethod, loc, name)
+}
+
+func (b *Interpreter) evalExpression(ctx []IContext, expr parser.IExpression) (*ExprValue, *errlog.Error) {
 	switch t := expr.(type) {
+	case *parser.DotExpression:
+
+	case *parser.ContextExpression:
+		newctx, err := b.evalToContext(ctx, t.Object)
+		if err != nil {
+			return nil, err
+		}
+		ctx = append(ctx, newctx)
+		return nil, b.processStatements(ctx, t.Statements)
 	case *parser.CallExpression:
-		ident, ok := t.Func.(*parser.IdentifierExpression)
-		if !ok {
-			// TODO: Location
-			return nil, errlog.NewError(errlog.ErrorNotAMethod, errlog.LocationRange{})
+		f, err := b.evalExpression(ctx, t.Func)
+		if err != nil {
+			return nil, err
 		}
-		var args []*ExprValue
-		for _, a := range t.Arguments {
-			arg, err := b.evalExpression(ctx, a)
-			if err != nil {
-				return nil, err
-			}
-			args = append(args, arg)
+		if f.Type != funcType {
+			return nil, b.errlog.LogError(errlog.ErrorNotAMethod, errlog.LocationRange{})
 		}
-		// TODO: Location
-		return b.call(errlog.LocationRange{}, ctx, ident.Identifier.StringValue, args...)
+		return f.FuncValue.Func(b, ctx, errlog.LocationRange{}, t.Arguments)
 	case *parser.IdentifierExpression:
-		// TODO: The identifier could be a variable as well
-		// TODO: Location
-		return b.call(errlog.LocationRange{}, ctx, t.Identifier.StringValue)
+		ident, err := b.lookup(ctx, errlog.LocationRange{}, t.Identifier.StringValue)
+		if err != nil {
+			return nil, err
+		}
+		return ident, nil
 	case *parser.BinaryExpression:
 		return b.evalBinaryExpression(ctx, t)
 	case *parser.DimensionExpression:
@@ -344,12 +354,11 @@ func (b *Interpreter) evalExpression(ctx IContext, expr parser.IExpression) (*Ex
 		return result, nil
 	case *parser.VectorExpression:
 		return b.evalVectorExpression(ctx, t)
-	default:
-		panic("TODO")
 	}
+	panic("TODO")
 }
 
-func (b *Interpreter) evalVectorExpression(ctx IContext, ast *parser.VectorExpression) (*ExprValue, *errlog.Error) {
+func (b *Interpreter) evalVectorExpression(ctx []IContext, ast *parser.VectorExpression) (*ExprValue, *errlog.Error) {
 	result := &ExprValue{Type: vectorType}
 	for _, expr := range ast.Values {
 		v, err := b.evalExpression(ctx, expr)
@@ -361,7 +370,7 @@ func (b *Interpreter) evalVectorExpression(ctx IContext, ast *parser.VectorExpre
 	return result, nil
 }
 
-func (b *Interpreter) evalDimensionExpression(ctx IContext, ast *parser.DimensionExpression) (*ExprValue, *errlog.Error) {
+func (b *Interpreter) evalDimensionExpression(ctx []IContext, ast *parser.DimensionExpression) (*ExprValue, *errlog.Error) {
 	left, err := b.evalExpression(ctx, ast.Value)
 	if err != nil {
 		return nil, err
@@ -370,31 +379,33 @@ func (b *Interpreter) evalDimensionExpression(ctx IContext, ast *parser.Dimensio
 	case "mm", "deg":
 		return left, nil
 	case "cm":
-		if left.Type == numberType {
-			result := &ExprValue{Type: numberType}
-			result.NumberValue = left.NumberValue * 10
-			return result, nil
+		val, err := b.ToFloat(left, errlog.LocationRange{})
+		if err != nil {
+			return nil, err
 		}
-		return nil, errlog.NewError(errlog.ErrorTypeMismtach, ast.Dimension.Location)
+		result := &ExprValue{Type: numberType}
+		result.NumberValue = val * 10
+		return result, nil
 	case "m":
-		if left.Type == numberType {
-			result := &ExprValue{Type: numberType}
-			result.NumberValue = left.NumberValue * 1000
-			return result, nil
+		val, err := b.ToFloat(left, errlog.LocationRange{})
+		if err != nil {
+			return nil, err
 		}
-		return nil, errlog.NewError(errlog.ErrorTypeMismtach, ast.Dimension.Location)
+		result := &ExprValue{Type: numberType}
+		result.NumberValue = val * 1000
+		return result, nil
 	}
 	panic("Oooops")
 }
 
-func (b *Interpreter) evalBinaryExpression(ctx IContext, ast *parser.BinaryExpression) (*ExprValue, *errlog.Error) {
+func (b *Interpreter) evalBinaryExpression(ctx []IContext, ast *parser.BinaryExpression) (*ExprValue, *errlog.Error) {
 	left, err := b.evalExpression(ctx, ast.Left)
 	if err != nil {
 		return nil, err
 	}
 	switch ast.Op.Kind {
 	case parser.TokenLogicalAnd:
-		b, err := left.ToBool(ast.Op.Location)
+		b, err := b.ToBool(left, ast.Op.Location)
 		if err != nil {
 			return nil, err
 		}
@@ -402,7 +413,7 @@ func (b *Interpreter) evalBinaryExpression(ctx IContext, ast *parser.BinaryExpre
 			return &ExprValue{Type: numberType, NumberValue: 0}, nil
 		}
 	case parser.TokenLogicalOr:
-		b, err := left.ToBool(ast.Op.Location)
+		b, err := b.ToBool(left, ast.Op.Location)
 		if err != nil {
 			return nil, err
 		}
@@ -459,14 +470,118 @@ func (b *Interpreter) evalBinaryExpression(ctx IContext, ast *parser.BinaryExpre
 	panic("Oooops")
 }
 
-func (b *Interpreter) call(loc errlog.LocationRange, ctx IContext, name string, args ...*ExprValue) (*ExprValue, *errlog.Error) {
-	result, done, err := ctx.Call(b, loc, name, args...)
+/*
+func (b *Interpreter) call(loc errlog.LocationRange, ctx IContext, f *ExprValue, args []parser.IExpression) (*ExprValue, *errlog.Error) {
+	if f.Type != funcType {
+		return nil, errlog.NewError(errlog.ErrorNotAMethod, errlog.LocationRange{})
+	}
+	return f.FuncValue.Func(b, ctx, errlog.LocationRange{}, args)
+}
+*/
+
+func (b *Interpreter) expandFunc(ctx []IContext, f *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
+	if f.Type == funcType {
+		return f.FuncValue.Func(b, ctx, loc)
+	}
+	return f, nil
+}
+
+func (b *Interpreter) ToFloat(e *ExprValue, loc errlog.LocationRange) (float64, *errlog.Error) {
+	if e.Type == funcType {
+		var err *errlog.Error
+		e, err = e.FuncValue.Func(b, nil, errlog.LocationRange{})
+		if err != nil {
+			return 0, err
+		}
+	}
+	if e.Type == numberType {
+		return e.NumberValue, nil
+	}
+	return 0, b.errlog.LogError(errlog.ErrorTypeMismtach, loc)
+}
+
+func (b *Interpreter) ToBool(e *ExprValue, loc errlog.LocationRange) (bool, *errlog.Error) {
+	if e.Type == funcType {
+		var err *errlog.Error
+		e, err = e.FuncValue.Func(b, nil, errlog.LocationRange{})
+		if err != nil {
+			return false, err
+		}
+	}
+	if e.Type == numberType {
+		return e.NumberValue != 0, nil
+	}
+	if e.Type == stringType {
+		return e.StringValue != "", nil
+	}
+	if e.Type == vectorType {
+		return len(e.VectorValue) != 0, nil
+	}
+	return false, b.errlog.LogError(errlog.ErrorTypeMismtach, loc)
+}
+
+func (b *Interpreter) ToVector(e *ExprValue, loc errlog.LocationRange) ([]*ExprValue, *errlog.Error) {
+	if e.Type == funcType {
+		var err *errlog.Error
+		e, err = e.FuncValue.Func(b, nil, errlog.LocationRange{})
+		if err != nil {
+			return nil, err
+		}
+	}
+	if e.Type == vectorType {
+		return e.VectorValue, nil
+	}
+	return nil, b.errlog.LogError(errlog.ErrorTypeMismtach, loc)
+}
+
+func (b *Interpreter) ToString(e *ExprValue, loc errlog.LocationRange) (string, *errlog.Error) {
+	if e.Type == funcType {
+		var err *errlog.Error
+		e, err = e.FuncValue.Func(b, nil, errlog.LocationRange{})
+		if err != nil {
+			return "", err
+		}
+	}
+	if e.Type == stringType {
+		return e.StringValue, nil
+	}
+	return "", b.errlog.LogError(errlog.ErrorTypeMismtach, loc)
+}
+
+func (b *Interpreter) ToContext(e *ExprValue, loc errlog.LocationRange) (IContext, *errlog.Error) {
+	if e.Type == funcType {
+		var err *errlog.Error
+		e, err = e.FuncValue.Func(b, nil, errlog.LocationRange{})
+		if err != nil {
+			return nil, err
+		}
+	}
+	if e.Type == contextType {
+		return e.Context, nil
+	}
+	return nil, b.errlog.LogError(errlog.ErrorTypeMismtach, loc)
+}
+
+func (b *Interpreter) evalToFloat(ctx []IContext, expr parser.IExpression) (float64, *errlog.Error) {
+	val, err := b.evalExpression(ctx, expr)
+	if err != nil {
+		return 0, err
+	}
+	return b.ToFloat(val, errlog.LocationRange{})
+}
+
+func (b *Interpreter) evalToString(ctx []IContext, expr parser.IExpression) (string, *errlog.Error) {
+	val, err := b.evalExpression(ctx, expr)
+	if err != nil {
+		return "", err
+	}
+	return b.ToString(val, errlog.LocationRange{})
+}
+
+func (b *Interpreter) evalToContext(ctx []IContext, expr parser.IExpression) (IContext, *errlog.Error) {
+	val, err := b.evalExpression(ctx, expr)
 	if err != nil {
 		return nil, err
 	}
-	if done {
-		return result, nil
-	}
-	// TODO: Try the global context
-	return nil, errlog.NewError(errlog.ErrorUnknownMethod, loc, name)
+	return b.ToContext(val, errlog.LocationRange{})
 }

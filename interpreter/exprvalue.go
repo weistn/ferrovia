@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"github.com/weistn/ferrovia/errlog"
+	"github.com/weistn/ferrovia/parser"
 )
 
 type ExprValue struct {
@@ -9,7 +10,13 @@ type ExprValue struct {
 	StringValue string
 	NumberValue float64
 	VectorValue []*ExprValue
+	FuncValue   *FuncValue
 	Context     IContext
+}
+
+type FuncValue struct {
+	Name string
+	Func func(b *Interpreter, ctx []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error)
 }
 
 func (e *ExprValue) LogicalOr(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *errlog.Error) {
@@ -309,6 +316,7 @@ func (e *ExprValue) Rsh(p *ExprValue, loc errlog.LocationRange) (*ExprValue, *er
 	return &ExprValue{Type: numberType, NumberValue: float64(uint64(e.NumberValue) >> uint64(p.NumberValue))}, nil
 }
 
+/*
 func (e *ExprValue) ToFloat(loc errlog.LocationRange) (float64, *errlog.Error) {
 	if e.Type == numberType {
 		return e.NumberValue, nil
@@ -342,3 +350,4 @@ func (e *ExprValue) ToString(loc errlog.LocationRange) (string, *errlog.Error) {
 	}
 	return "", errlog.NewError(errlog.ErrorTypeMismtach, loc)
 }
+*/
