@@ -34,13 +34,13 @@ type TracksContext struct {
 
 // Implements IContext
 type TurnoutContext struct {
-	track        *tracks.Track
-	left         *TracksContext
-	right        *TracksContext
-	straight     *TracksContext
-	backleft     *TracksContext
-	backright    *TracksContext
-	backstraight *TracksContext
+	track      *tracks.Track
+	left       *TracksContext
+	right      *TracksContext
+	middle     *TracksContext
+	backleft   *TracksContext
+	backright  *TracksContext
+	backmiddle *TracksContext
 }
 
 func NewTracksContext(layer *tracks.TrackLayer) *TracksContext {
@@ -87,22 +87,6 @@ func NewTracksContext(layer *tracks.TrackLayer) *TracksContext {
 				return nil, err
 			}
 			ctx.elements = append(ctx.elements, &pendingAnchor{x: x, y: y, z: z, angle: angle, location: loc})
-			/*
-				if ctx.last == nil {
-					// Apply to the next track
-				} else {
-					// Apply to previous track
-					angle += 180
-					if angle > 360 {
-						angle -= 360
-					}
-					l := tracks.NewTrackLocation(ctx.last, tracks.Vec3{x, y, z}, angle)
-					if !ctx.last.Track.SetLocation(l) {
-						return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
-					}
-					b.tracksWithAnchor = append(b.tracksWithAnchor, ctx.last.Track)
-				}
-			*/
 			return nil, nil
 		},
 	}
@@ -132,23 +116,6 @@ func (c *TracksContext) Lookup(b *Interpreter, loc errlog.LocationRange, name st
 			}
 			newTrack.SourceLocation = loc
 			c.elements = append(c.elements, newTrack)
-			/*
-				con := newTrack.FirstConnection()
-				if c.anchor != nil {
-					l := tracks.NewTrackLocation(con, tracks.Vec3{c.anchor.x, c.anchor.y, c.anchor.z}, c.anchor.angle)
-					if !con.Track.SetLocation(l) {
-						return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
-					}
-					b.tracksWithAnchor = append(b.tracksWithAnchor, con.Track)
-					c.anchor = nil
-				}
-				if c.last != nil {
-					c.last.Connect(con)
-				} else {
-					c.first = con
-				}
-				c.last = newTrack.SecondConnection()
-			*/
 			// In case of a turnout, create a TurnoutContext
 			if newTrack.Geometry.IncomingConnectionCount+newTrack.Geometry.OutgoingConnectionCount > 2 {
 				return &ExprValue{Type: contextType, Context: NewTurnoutContext(newTrack)}, nil
@@ -222,10 +189,10 @@ func (c *TurnoutContext) Lookup(b *Interpreter, loc errlog.LocationRange, name s
 		c.right = NewTracksContext(c.track.Layer)
 		c.right.location = loc
 		return &ExprValue{Type: contextType, Context: c.right}, nil
-	case "straight":
-		c.straight = NewTracksContext(c.track.Layer)
-		c.straight.location = loc
-		return &ExprValue{Type: contextType, Context: c.straight}, nil
+	case "middle":
+		c.middle = NewTracksContext(c.track.Layer)
+		c.middle.location = loc
+		return &ExprValue{Type: contextType, Context: c.middle}, nil
 	case "backleft":
 		c.backleft = NewTracksContext(c.track.Layer)
 		c.backleft.location = loc
@@ -234,10 +201,10 @@ func (c *TurnoutContext) Lookup(b *Interpreter, loc errlog.LocationRange, name s
 		c.backright = NewTracksContext(c.track.Layer)
 		c.backright.location = loc
 		return &ExprValue{Type: contextType, Context: c.backright}, nil
-	case "backstraight":
-		c.backstraight = NewTracksContext(c.track.Layer)
-		c.backstraight.location = loc
-		return &ExprValue{Type: contextType, Context: c.backstraight}, nil
+	case "backmiddle":
+		c.backmiddle = NewTracksContext(c.track.Layer)
+		c.backmiddle.location = loc
+		return &ExprValue{Type: contextType, Context: c.backmiddle}, nil
 	}
 	return nil, nil
 }
@@ -251,6 +218,9 @@ func (c *TurnoutContext) connect(c1, c2 *tracks.TrackConnection) {
 
 func (c *TurnoutContext) Close(b *Interpreter) *errlog.Error {
 	if c.track.Geometry.IncomingConnectionCount == 1 && c.track.Geometry.OutgoingConnectionCount == 2 {
+		if c.middle != nil || c.backmiddle != nil {
+			panic("TOOD: The 'middle' connection is not available on this track")
+		}
 		// A normal turnout
 		if c.backleft != nil || c.backright != nil {
 			// Reverse track
@@ -283,8 +253,40 @@ func (c *TurnoutContext) Close(b *Interpreter) *errlog.Error {
 	} else if c.track.Geometry.IncomingConnectionCount == 1 && c.track.Geometry.OutgoingConnectionCount == 3 {
 		// A three-way turnout
 		panic("TODO")
+	} else if c.track.Geometry.IncomingConnectionCount == 2 && c.track.Geometry.OutgoingConnectionCount == 2 && len(c.track.Geometry.TurnoutOptions) == 2 {
+		// A non-switching crossing
+		if c.middle != nil || c.backmiddle != nil {
+			panic("TOOD: The 'middle' connection is not available on this track")
+		}
+		if c.backleft != nil && c.backright != nil {
+			panic("TODO: No free connection left on turnout")
+		}
+		if c.left != nil && c.right != nil {
+			panic("TODO: No free connection left on turnout")
+		}
+		// A switching crossing
+		if c.backright == nil && c.left == nil {
+			c.track.SelectedTurnoutOption = 0
+		} else if c.backleft == nil && c.right == nil {
+			c.track.SelectedTurnoutOption = 1
+		} else {
+			panic("TODO: No free connection left on turnout")
+		}
+		if c.left != nil {
+			c.connect(c.track.Connection(2), c.left.first)
+		} else if c.right != nil {
+			c.connect(c.track.Connection(3), c.right.first)
+		}
+		if c.backright != nil {
+			c.connect(c.track.Connection(0), c.backright.last)
+		} else if c.backleft != nil {
+			c.connect(c.track.Connection(1), c.backleft.last)
+		}
 	} else if c.track.Geometry.IncomingConnectionCount == 2 && c.track.Geometry.OutgoingConnectionCount == 2 {
-		// A crossing
+		if c.middle != nil || c.backmiddle != nil {
+			panic("TOOD: The 'middle' connection is not available on this track")
+		}
+		// A switching crossing
 		if c.backright == nil && c.left == nil {
 			c.track.SelectedTurnoutOption = 0
 		} else if c.backright == nil && c.right == nil {

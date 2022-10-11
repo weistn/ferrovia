@@ -52,5 +52,9 @@ tracks {
         left { L6 }
     } 
     G1
+    K15 {
+        backleft { L6 }
+        right { R6 }
+    }
     @(150 cm, 250 cm, 0 cm, 90 deg)
 }
