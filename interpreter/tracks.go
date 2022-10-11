@@ -285,7 +285,31 @@ func (c *TurnoutContext) Close(b *Interpreter) *errlog.Error {
 		panic("TODO")
 	} else if c.track.Geometry.IncomingConnectionCount == 2 && c.track.Geometry.OutgoingConnectionCount == 2 {
 		// A crossing
-		panic("TODO")
+		if c.backright == nil && c.left == nil {
+			c.track.SelectedTurnoutOption = 0
+		} else if c.backright == nil && c.right == nil {
+			c.track.SelectedTurnoutOption = 1
+		} else if c.backleft == nil && c.left == nil {
+			c.track.SelectedTurnoutOption = 2
+		} else if c.backleft == nil && c.right == nil {
+			c.track.SelectedTurnoutOption = 3
+		}
+		if c.backleft != nil && c.backright != nil {
+			panic("TODO: No free connection left on turnout")
+		}
+		if c.left != nil && c.right != nil {
+			panic("TODO: No free connection left on turnout")
+		}
+		if c.left != nil {
+			c.connect(c.track.Connection(2), c.left.first)
+		} else if c.right != nil {
+			c.connect(c.track.Connection(3), c.right.first)
+		}
+		if c.backright != nil {
+			c.connect(c.track.Connection(0), c.backright.last)
+		} else if c.backleft != nil {
+			c.connect(c.track.Connection(1), c.backleft.last)
+		}
 	} else {
 		panic("Ooops")
 	}

@@ -44,3 +44,13 @@ tracks {
     }
     @(150 cm, 150 cm, 0 cm, 90 deg)
 }
+
+tracks {
+    G1
+    DKW10 {
+        backright { R6 }
+        left { L6 }
+    } 
+    G1
+    @(150 cm, 250 cm, 0 cm, 90 deg)
+}
