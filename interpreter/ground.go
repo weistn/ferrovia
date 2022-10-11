@@ -123,3 +123,7 @@ func (c *GroundContext) Lookup(b *Interpreter, loc errlog.LocationRange, name st
 	}
 	return nil, nil
 }
+
+func (c *GroundContext) Close(b *Interpreter) *errlog.Error {
+	return nil
+}

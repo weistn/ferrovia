@@ -38,3 +38,7 @@ func (c *LayerContext) Lookup(b *Interpreter, loc errlog.LocationRange, name str
 	}
 	return nil, nil
 }
+
+func (c *LayerContext) Close(b *Interpreter) *errlog.Error {
+	return nil
+}

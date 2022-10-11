@@ -7,22 +7,40 @@ import (
 )
 
 type pendingAnchor struct {
-	x     float64
-	y     float64
-	z     float64
-	angle float64
+	x        float64
+	y        float64
+	z        float64
+	angle    float64
+	location errlog.LocationRange
 }
 
 // Implements IContext
 type TracksContext struct {
+	// The currently selected layer
 	layer *tracks.TrackLayer
-	// track *tracks.Track
-	first      *tracks.TrackConnection
-	last       *tracks.TrackConnection
-	anchor     *pendingAnchor
-	atFunc     FuncValue
-	layerFunc  FuncValue
+	// A list of *Track or *pendingAnchor or *TrackLayer instances.
+	// The list is processed upon Close().
+	elements []interface{}
+	// Populate after Close()
+	first *tracks.TrackConnection
+	// Populate after Close()
+	last      *tracks.TrackConnection
+	atFunc    FuncValue
+	layerFunc FuncValue
+	// A cache
 	trackFuncs map[string]*FuncValue
+	location   errlog.LocationRange
+}
+
+// Implements IContext
+type TurnoutContext struct {
+	track        *tracks.Track
+	left         *TracksContext
+	right        *TracksContext
+	straight     *TracksContext
+	backleft     *TracksContext
+	backright    *TracksContext
+	backstraight *TracksContext
 }
 
 func NewTracksContext(layer *tracks.TrackLayer) *TracksContext {
@@ -68,106 +86,28 @@ func NewTracksContext(layer *tracks.TrackLayer) *TracksContext {
 			if err != nil {
 				return nil, err
 			}
-			if ctx.last == nil {
-				// Apply to the next track
-				ctx.anchor = &pendingAnchor{x: x, y: y, z: z, angle: angle}
-			} else {
-				// Apply to previous track
-				angle += 180
-				if angle > 360 {
-					angle -= 360
+			ctx.elements = append(ctx.elements, &pendingAnchor{x: x, y: y, z: z, angle: angle, location: loc})
+			/*
+				if ctx.last == nil {
+					// Apply to the next track
+				} else {
+					// Apply to previous track
+					angle += 180
+					if angle > 360 {
+						angle -= 360
+					}
+					l := tracks.NewTrackLocation(ctx.last, tracks.Vec3{x, y, z}, angle)
+					if !ctx.last.Track.SetLocation(l) {
+						return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
+					}
+					b.tracksWithAnchor = append(b.tracksWithAnchor, ctx.last.Track)
 				}
-				l := tracks.NewTrackLocation(ctx.last, tracks.Vec3{x, y, z}, angle)
-				if !ctx.last.Track.SetLocation(l) {
-					return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
-				}
-				b.tracksWithAnchor = append(b.tracksWithAnchor, ctx.last.Track)
-			}
+			*/
 			return nil, nil
 		},
 	}
 	return ctx
 }
-
-/*
-// Returns (nil, false, nil) if the call could not be made, because the function is unknown.
-func (c *TrackContext) Call(b *Interpreter, loc errlog.LocationRange, name string, args ...*ExprValue) (*ExprValue, bool, *errlog.Error) {
-	if name == "layer" {
-		if len(args) != 1 {
-			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
-		}
-		name, err := b.ToString(args[0], loc)
-		if err != nil {
-			return nil, true, err
-		}
-		l, ok := b.model.Tracks.Layers[name]
-		if !ok {
-			return nil, true, errlog.NewError(errlog.ErrorUnknownLayer, loc, name)
-		}
-		c.layer = l
-		return nil, true, nil
-	} else if name == "@" {
-		if len(args) != 4 {
-			return nil, true, errlog.NewError(errlog.ErrorArgumentCountMismatch, loc, "1")
-		}
-		x, err := b.ToFloat(args[0], loc)
-		if err != nil {
-			return nil, true, err
-		}
-		y, err := b.ToFloat(args[1], loc)
-		if err != nil {
-			return nil, true, err
-		}
-		z, err := b.ToFloat(args[2], loc)
-		if err != nil {
-			return nil, true, err
-		}
-		angle, err := b.ToFloat(args[3], loc)
-		if err != nil {
-			return nil, true, err
-		}
-		if c.last == nil {
-			// Apply to the next track
-			c.anchor = &pendingAnchor{x: x, y: y, z: z, angle: angle}
-		} else {
-			// Apply to previous track
-			angle += 180
-			if angle > 360 {
-				angle -= 360
-			}
-			l := tracks.NewTrackLocation(c.last, tracks.Vec3{x, y, z}, angle)
-			if !c.last.Track.SetLocation(l) {
-				return nil, true, errlog.NewError(errlog.ErrorTrackPositionedTwice, loc)
-			}
-			b.tracksWithAnchor = append(b.tracksWithAnchor, c.last.Track)
-		}
-		return nil, true, nil
-	} else {
-		newTrack := c.layer.NewTrack(name)
-		if newTrack == nil {
-			// A track of this name does not exist.
-			return nil, false, nil
-		}
-		newTrack.SourceLocation = loc
-		con := newTrack.FirstConnection()
-		if c.anchor != nil {
-			l := tracks.NewTrackLocation(con, tracks.Vec3{c.anchor.x, c.anchor.y, c.anchor.z}, c.anchor.angle)
-			if !con.Track.SetLocation(l) {
-				return nil, true, errlog.NewError(errlog.ErrorTrackPositionedTwice, loc)
-			}
-			b.tracksWithAnchor = append(b.tracksWithAnchor, con.Track)
-			c.anchor = nil
-		}
-		if c.last != nil {
-			c.last.Connect(con)
-		} else {
-			c.first = con
-		}
-		c.last = newTrack.SecondConnection()
-		return nil, true, nil
-	}
-}
-*/
 
 func (c *TracksContext) Lookup(b *Interpreter, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
 	switch name {
@@ -183,7 +123,7 @@ func (c *TracksContext) Lookup(b *Interpreter, loc errlog.LocationRange, name st
 		f.Name = name
 		f.Func = func(b *Interpreter, ctx []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error) {
 			if len(args) != 0 {
-				return nil, b.errlog.LogError(errlog.ErrorArgumentCountMismatch, loc, "1")
+				return nil, b.errlog.LogError(errlog.ErrorArgumentCountMismatch, loc, "0")
 			}
 			newTrack := c.layer.NewTrack(name)
 			if newTrack == nil {
@@ -191,24 +131,163 @@ func (c *TracksContext) Lookup(b *Interpreter, loc errlog.LocationRange, name st
 				return nil, b.errlog.LogError(errlog.ErrorUnknownTrackType, loc, name)
 			}
 			newTrack.SourceLocation = loc
-			con := newTrack.FirstConnection()
-			if c.anchor != nil {
-				l := tracks.NewTrackLocation(con, tracks.Vec3{c.anchor.x, c.anchor.y, c.anchor.z}, c.anchor.angle)
+			c.elements = append(c.elements, newTrack)
+			/*
+				con := newTrack.FirstConnection()
+				if c.anchor != nil {
+					l := tracks.NewTrackLocation(con, tracks.Vec3{c.anchor.x, c.anchor.y, c.anchor.z}, c.anchor.angle)
+					if !con.Track.SetLocation(l) {
+						return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
+					}
+					b.tracksWithAnchor = append(b.tracksWithAnchor, con.Track)
+					c.anchor = nil
+				}
+				if c.last != nil {
+					c.last.Connect(con)
+				} else {
+					c.first = con
+				}
+				c.last = newTrack.SecondConnection()
+			*/
+			// In case of a turnout, create a TurnoutContext
+			if newTrack.Geometry.IncomingConnectionCount+newTrack.Geometry.OutgoingConnectionCount > 2 {
+				return &ExprValue{Type: contextType, Context: NewTurnoutContext(newTrack)}, nil
+			}
+			return nil, nil
+		}
+		c.trackFuncs[name] = f
+		return &ExprValue{Type: funcType, FuncValue: f}, nil
+	}
+}
+
+func (c *TracksContext) Close(b *Interpreter) *errlog.Error {
+	//
+	// Connect all tracks
+	//
+	var anchor *pendingAnchor
+	for _, el := range c.elements {
+		switch e := el.(type) {
+		case *tracks.Track:
+			con := e.FirstConnection()
+			if anchor != nil {
+				l := tracks.NewTrackLocation(con, tracks.Vec3{anchor.x, anchor.y, anchor.z}, anchor.angle)
 				if !con.Track.SetLocation(l) {
-					return nil, b.errlog.LogError(errlog.ErrorTrackPositionedTwice, loc)
+					return b.errlog.LogError(errlog.ErrorTrackPositionedTwice, e.SourceLocation)
 				}
 				b.tracksWithAnchor = append(b.tracksWithAnchor, con.Track)
-				c.anchor = nil
+				anchor = nil
 			}
 			if c.last != nil {
 				c.last.Connect(con)
 			} else {
 				c.first = con
 			}
-			c.last = newTrack.SecondConnection()
-			return nil, nil
+			c.last = e.SecondConnection()
+		case *pendingAnchor:
+			if c.last == nil {
+				// Apply to the next track
+				anchor = e
+			} else {
+				// Apply to previous track
+				angle := e.angle
+				angle += 180
+				if angle > 360 {
+					angle -= 360
+				}
+				l := tracks.NewTrackLocation(c.last, tracks.Vec3{e.x, e.y, e.z}, angle)
+				if !c.last.Track.SetLocation(l) {
+					return b.errlog.LogError(errlog.ErrorTrackPositionedTwice, e.location)
+				}
+				b.tracksWithAnchor = append(b.tracksWithAnchor, c.last.Track)
+			}
+		default:
+			panic("Ooooops")
 		}
-		c.trackFuncs[name] = f
-		return &ExprValue{Type: funcType, FuncValue: f}, nil
 	}
+	return nil
+}
+
+func NewTurnoutContext(track *tracks.Track) *TurnoutContext {
+	return &TurnoutContext{track: track}
+}
+
+func (c *TurnoutContext) Lookup(b *Interpreter, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
+	println("TURNOUT Lookup", name)
+	switch name {
+	case "left":
+		c.left = NewTracksContext(c.track.Layer)
+		c.left.location = loc
+		return &ExprValue{Type: contextType, Context: c.left}, nil
+	case "right":
+		c.right = NewTracksContext(c.track.Layer)
+		c.right.location = loc
+		return &ExprValue{Type: contextType, Context: c.right}, nil
+	case "straight":
+		c.straight = NewTracksContext(c.track.Layer)
+		c.straight.location = loc
+		return &ExprValue{Type: contextType, Context: c.straight}, nil
+	case "backleft":
+		c.backleft = NewTracksContext(c.track.Layer)
+		c.backleft.location = loc
+		return &ExprValue{Type: contextType, Context: c.backleft}, nil
+	case "backright":
+		c.backright = NewTracksContext(c.track.Layer)
+		c.backright.location = loc
+		return &ExprValue{Type: contextType, Context: c.backright}, nil
+	case "backstraight":
+		c.backstraight = NewTracksContext(c.track.Layer)
+		c.backstraight.location = loc
+		return &ExprValue{Type: contextType, Context: c.backstraight}, nil
+	}
+	return nil, nil
+}
+
+func (c *TurnoutContext) connect(c1, c2 *tracks.TrackConnection) {
+	if c2 == nil {
+		return
+	}
+	c1.Connect(c2)
+}
+
+func (c *TurnoutContext) Close(b *Interpreter) *errlog.Error {
+	if c.track.Geometry.IncomingConnectionCount == 1 && c.track.Geometry.OutgoingConnectionCount == 2 {
+		// A normal turnout
+		if c.backleft != nil || c.backright != nil {
+			// Reverse track
+			if c.left != nil || c.right != nil {
+				panic("TODO: Track is not a crossing")
+			}
+			if c.backleft != nil && c.backright != nil {
+				panic("TODO: No free connection left on turnout")
+			}
+			c.track.Reverse()
+			if c.backright != nil {
+				c.connect(c.track.Connection(1), c.backright.last)
+				c.track.SelectedTurnoutOption = 1
+			} else {
+				c.connect(c.track.Connection(2), c.backleft.last)
+				c.track.SelectedTurnoutOption = 0
+			}
+		} else {
+			if c.left != nil && c.right != nil {
+				panic("TODO: No free connection left on turnout")
+			}
+			if c.left != nil {
+				c.connect(c.track.Connection(1), c.left.first)
+				c.track.SelectedTurnoutOption = 1
+			} else if c.right != nil {
+				c.connect(c.track.Connection(2), c.right.first)
+				c.track.SelectedTurnoutOption = 0
+			}
+		}
+	} else if c.track.Geometry.IncomingConnectionCount == 1 && c.track.Geometry.OutgoingConnectionCount == 3 {
+		// A three-way turnout
+		panic("TODO")
+	} else if c.track.Geometry.IncomingConnectionCount == 2 && c.track.Geometry.OutgoingConnectionCount == 2 {
+		// A crossing
+		panic("TODO")
+	} else {
+		panic("Ooops")
+	}
+	return nil
 }

@@ -96,9 +96,6 @@ func (p *Parser) parseBody() ([]IExpression, *errlog.Error) {
 			if err != nil {
 				return nil, err
 			}
-			if _, err := p.expect(TokenCloseBraces); err != nil {
-				return nil, err
-			}
 			expr = &ContextExpression{Object: expr, Statements: statements}
 		}
 

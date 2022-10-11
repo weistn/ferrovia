@@ -318,7 +318,7 @@ func InitRoco() {
 	}
 	// Track turning right
 	rocoW15R = &TrackGeometry{
-		Name: "R-W15",
+		Name: "WR15",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryLine{Size: 230, Anchor: TrackGeometryPoint{
 				Position: [2]float64{0, 0},
@@ -349,7 +349,7 @@ func InitRoco() {
 	}
 	// Track turning right
 	rocoW15L = &TrackGeometry{
-		Name: "L-W15",
+		Name: "WL15",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryLine{Size: 230, Anchor: TrackGeometryPoint{
 				Position: [2]float64{0, 0},
@@ -379,7 +379,7 @@ func InitRoco() {
 		TurnoutOptions:          []TurnoutOption{{From: 0, To: 2}, {From: 0, To: 1}},
 	}
 	rocoBWR5 = &TrackGeometry{
-		Name: "R-BW5",
+		Name: "BWR5",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryArc{TrackAngle: 30, Radius: 542.8, Anchor: TrackGeometryPoint{
 				Position: [2]float64{0, 0},
@@ -413,7 +413,7 @@ func InitRoco() {
 		TurnoutOptions:          []TurnoutOption{{From: 0, To: 2}, {From: 0, To: 1}},
 	}
 	rocoBWL5 = &TrackGeometry{
-		Name: "L-BW5",
+		Name: "BWL5",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryArc{TrackAngle: 30, Radius: 542.8, Anchor: TrackGeometryPoint{
 				Position: [2]float64{-542.8 * (1. - math.Cos(math.Pi/6.0)), -542.8*math.Sin(math.Pi/6.0) - 61},
@@ -447,7 +447,7 @@ func InitRoco() {
 		TurnoutOptions:          []TurnoutOption{{From: 0, To: 2}, {From: 0, To: 1}},
 	}
 	rocoBWR9 = &TrackGeometry{
-		Name: "R-BW9",
+		Name: "BWR9",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryArc{TrackAngle: 30, Radius: 826.4, Anchor: TrackGeometryPoint{
 				Position: [2]float64{0, 0},
@@ -481,7 +481,7 @@ func InitRoco() {
 		TurnoutOptions:          []TurnoutOption{{From: 0, To: 2}, {From: 0, To: 1}},
 	}
 	rocoBWL9 = &TrackGeometry{
-		Name: "L-BW9",
+		Name: "BWL9",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryArc{TrackAngle: 30, Radius: 826.4, Anchor: TrackGeometryPoint{
 				Position: [2]float64{-826.4 * (1. - math.Cos(math.Pi/6.0)), -826.4*math.Sin(math.Pi/6.0) - 61},
@@ -515,7 +515,7 @@ func InitRoco() {
 		TurnoutOptions:          []TurnoutOption{{From: 0, To: 2}, {From: 0, To: 1}},
 	}
 	rocoDKW15 = &TrackGeometry{
-		Name: "K-W15",
+		Name: "DKW15",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryLine{Size: 230, Anchor: TrackGeometryPoint{
 				Position: [2]float64{0, 0},
@@ -549,7 +549,7 @@ func InitRoco() {
 		TurnoutOptions:          []TurnoutOption{{From: 0, To: 2}, {From: 0, To: 3}, {From: 1, To: 2}, {From: 1, To: 3}},
 	}
 	rocoK15 = &TrackGeometry{
-		Name: "K-K15",
+		Name: "K15",
 		Paths: []ITrackGeometryPath{
 			&TrackGeometryLine{Size: 230, Anchor: TrackGeometryPoint{
 				Position: [2]float64{0, 0},
@@ -642,7 +642,7 @@ func InitRoco() {
 		},
 		IncomingConnectionCount: 1,
 		OutgoingConnectionCount: 2,
-		TurnoutOptions:          []TurnoutOption{{From: 0, To: 2}, {From: 0, To: 1}},
+		TurnoutOptions:          []TurnoutOption{{From: 0, To: 1}, {From: 0, To: 2}},
 	}
 	rocoDKW10 = &TrackGeometry{
 		Name: "DKW10",
@@ -687,22 +687,22 @@ func InitRoco() {
 	RegisterTrackFactory("L9", NewR9Left)
 	RegisterTrackFactory("R10", NewR10Right)
 	RegisterTrackFactory("L10", NewR10Left)
-	RegisterTrackFactory("R-W15", NewW15Right)
-	RegisterTrackFactory("L-W15", NewW15Left)
-	RegisterTrackFactory("R-BW5", NewBWR5)
-	RegisterTrackFactory("L-BW5", NewBWL5)
-	RegisterTrackFactory("R-BW9", NewBWR9)
-	RegisterTrackFactory("L-BW9", NewBWL9)
-	RegisterTrackFactory("K-W15", NewDKW15)
-	RegisterTrackFactory("K-K15", NewK15)
+	RegisterTrackFactory("WR15", NewW15Right)
+	RegisterTrackFactory("WL15", NewW15Left)
+	RegisterTrackFactory("BWR5", NewBWR5)
+	RegisterTrackFactory("BWL5", NewBWL5)
+	RegisterTrackFactory("BWR9", NewBWR9)
+	RegisterTrackFactory("BWL9", NewBWL9)
+	RegisterTrackFactory("DKW15", NewDKW15)
+	RegisterTrackFactory("K15", NewK15)
 	RegisterTrackFactory("G025", NewG025)
 	RegisterTrackFactory("G05", NewG05)
 	RegisterTrackFactory("G1", NewG1)
 	RegisterTrackFactory("G4", NewG4)
 	RegisterTrackFactory("DG1", NewDG1)
-	RegisterTrackFactory("R-W10", NewW10Right)
-	RegisterTrackFactory("L-W10", NewW10Left)
-	RegisterTrackFactory("K-W10", NewDKW10)
+	RegisterTrackFactory("WR10", NewW10Right)
+	RegisterTrackFactory("WL10", NewW10Left)
+	RegisterTrackFactory("DKW10", NewDKW10)
 	RegisterTrackFactory("D2", NewD2)
 	RegisterTrackFactory("D8", NewD8)
 	registerCustomCurve("20", 1962, 5)

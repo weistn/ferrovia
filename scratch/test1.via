@@ -17,14 +17,30 @@ ground {
 
 tracks {
     @(100 cm, 100 cm, 0 cm, 90 deg)
+    WR10 {
+        right {
+            L20 L20 G1
+        }
+    }
     G1
+    WL10 {
+        left {
+            R20 R20 G1 G1
+        }
+    }
     G1 R6 R6
     G1
 }
 
 tracks {
     R6 R6
+    WL10 {
+        backright { R5 }
+    }
     G1
     G1
+    WR10 {
+        right { }
+    }
     @(150 cm, 150 cm, 0 cm, 90 deg)
 }

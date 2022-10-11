@@ -207,6 +207,10 @@ func (t *Track) ActiveConnections() (*TrackConnection, *TrackConnection) {
 	return t.connections[t.Geometry.TurnoutOptions[t.SelectedTurnoutOption].From], t.connections[t.Geometry.TurnoutOptions[t.SelectedTurnoutOption].To]
 }
 
+func (t *Track) Reverse() {
+	t.connectReverse = true
+}
+
 // Each track has one selected TrackOption, that describes that trains can drive from
 // one connection to another. FirstConnection returns the first such connection.
 // First and second connection are reversed if the track has been reversed.

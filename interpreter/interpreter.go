@@ -115,7 +115,10 @@ func (b *Interpreter) processGround(ast *parser.GroundPlate) {
 	if err != nil {
 		return
 	}
-	b.model.GroundPlates = append(b.model.GroundPlates, ground)
+	err = ctx.Close(b)
+	if err == nil {
+		b.model.GroundPlates = append(b.model.GroundPlates, ground)
+	}
 }
 
 func (b *Interpreter) processSwitchboard(ast *parser.Switchboard) {
@@ -136,7 +139,10 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 	if err != nil {
 		return
 	}
-	b.model.Tracks.AddLayer(ctx.layer)
+	err = ctx.Close(b)
+	if err == nil {
+		b.model.Tracks.AddLayer(ctx.layer)
+	}
 }
 
 func (b *Interpreter) processTracks(ast *parser.Tracks) {
@@ -145,6 +151,7 @@ func (b *Interpreter) processTracks(ast *parser.Tracks) {
 	if err != nil {
 		return
 	}
+	ctx.Close(b)
 }
 
 /*
@@ -304,8 +311,8 @@ func (b *Interpreter) processStatements(ctx []IContext, ast []parser.IExpression
 }
 
 func (b *Interpreter) lookup(ctx []IContext, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
-	for _, c := range ctx {
-		result, err := c.Lookup(b, loc, name)
+	for i := len(ctx) - 1; i >= 0; i-- {
+		result, err := ctx[i].Lookup(b, loc, name)
 		if err != nil || result != nil {
 			return result, err
 		}
@@ -322,8 +329,13 @@ func (b *Interpreter) evalExpression(ctx []IContext, expr parser.IExpression) (*
 		if err != nil {
 			return nil, err
 		}
+		fmt.Printf("Context %T\n", newctx)
 		ctx = append(ctx, newctx)
-		return nil, b.processStatements(ctx, t.Statements)
+		err = b.processStatements(ctx, t.Statements)
+		if err != nil {
+			return nil, err
+		}
+		return nil, newctx.Close(b)
 	case *parser.CallExpression:
 		f, err := b.evalExpression(ctx, t.Func)
 		if err != nil {
