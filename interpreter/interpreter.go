@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/weistn/ferrovia/errlog"
@@ -109,7 +110,7 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 
 func (b *Interpreter) processGround(ast *parser.GroundPlate) {
 	ground := &model.GroundPlate{}
-	ctx := &GroundContext{Ground: ground}
+	ctx := NewGroundContext(ground)
 	err := b.processStatements([]IContext{ctx}, ast.Expressions)
 	if err != nil {
 		return
@@ -130,7 +131,7 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 		b.errlog.LogError(errlog.ErrorDuplicateLayer, ast.Location, ast.Name.StringValue)
 		return
 	}
-	ctx := &LayerContext{layer: &tracks.TrackLayer{Name: ast.Name.StringValue}}
+	ctx := NewLayerContext(&tracks.TrackLayer{Name: ast.Name.StringValue})
 	err := b.processStatements([]IContext{ctx}, ast.Expressions)
 	if err != nil {
 		return
@@ -139,7 +140,7 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 }
 
 func (b *Interpreter) processTracks(ast *parser.Tracks) {
-	ctx := &TrackContext{layer: b.model.Tracks.Layers[""]}
+	ctx := NewTracksContext(b.model.Tracks.Layers[""])
 	err := b.processStatements([]IContext{ctx}, ast.Expressions)
 	if err != nil {
 		return
@@ -292,9 +293,11 @@ func (b *Interpreter) processStatements(ctx []IContext, ast []parser.IExpression
 		if err != nil {
 			return err
 		}
-		_, err = b.expandFunc(ctx, result, errlog.LocationRange{})
-		if err != nil {
-			return err
+		if result != nil {
+			_, err = b.expandFunc(ctx, result, errlog.LocationRange{})
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -313,7 +316,7 @@ func (b *Interpreter) lookup(ctx []IContext, loc errlog.LocationRange, name stri
 func (b *Interpreter) evalExpression(ctx []IContext, expr parser.IExpression) (*ExprValue, *errlog.Error) {
 	switch t := expr.(type) {
 	case *parser.DotExpression:
-
+		panic("TODO dot")
 	case *parser.ContextExpression:
 		newctx, err := b.evalToContext(ctx, t.Object)
 		if err != nil {
@@ -329,7 +332,7 @@ func (b *Interpreter) evalExpression(ctx []IContext, expr parser.IExpression) (*
 		if f.Type != funcType {
 			return nil, b.errlog.LogError(errlog.ErrorNotAMethod, errlog.LocationRange{})
 		}
-		return f.FuncValue.Func(b, ctx, errlog.LocationRange{}, t.Arguments)
+		return f.FuncValue.Func(b, ctx, errlog.LocationRange{}, t.Arguments...)
 	case *parser.IdentifierExpression:
 		ident, err := b.lookup(ctx, errlog.LocationRange{}, t.Identifier.StringValue)
 		if err != nil {
@@ -355,6 +358,7 @@ func (b *Interpreter) evalExpression(ctx []IContext, expr parser.IExpression) (*
 	case *parser.VectorExpression:
 		return b.evalVectorExpression(ctx, t)
 	}
+	fmt.Printf("Type %T\n", expr)
 	panic("TODO")
 }
 

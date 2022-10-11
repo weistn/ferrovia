@@ -14,7 +14,7 @@ type pendingAnchor struct {
 }
 
 // Implements IContext
-type TrackContext struct {
+type TracksContext struct {
 	layer *tracks.TrackLayer
 	// track *tracks.Track
 	first      *tracks.TrackConnection
@@ -25,8 +25,8 @@ type TrackContext struct {
 	trackFuncs map[string]*FuncValue
 }
 
-func NewTrackContext() *TrackContext {
-	ctx := &TrackContext{}
+func NewTracksContext(layer *tracks.TrackLayer) *TracksContext {
+	ctx := &TracksContext{layer: layer}
 	ctx.trackFuncs = make(map[string]*FuncValue)
 	ctx.layerFunc = FuncValue{
 		Name: "layer",
@@ -169,7 +169,7 @@ func (c *TrackContext) Call(b *Interpreter, loc errlog.LocationRange, name strin
 }
 */
 
-func (c *TrackContext) Lookup(b *Interpreter, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
+func (c *TracksContext) Lookup(b *Interpreter, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
 	switch name {
 	case "layer":
 		return &ExprValue{Type: funcType, FuncValue: &c.layerFunc}, nil

@@ -74,7 +74,7 @@ func NewGroundContext(ground *model.GroundPlate) *GroundContext {
 			return nil, err
 		},
 	}
-	ctx.height = &FuncValue{
+	ctx.polygon = &FuncValue{
 		Name: "polygon",
 		Func: func(b *Interpreter, c []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error) {
 			if len(args) < 3 {
