@@ -36,19 +36,11 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 		case *parser.GroundPlate:
 			// Do nothing by intention
 		case *parser.Layer:
-			/*
-				if t.Name.StringValue != "" {
-					b.identifiers[t.Name.StringValue] = s
-				}
-			*/
+			// Do nothing by intention
 		case *parser.Switchboard:
 			b.processSwitchboard(t)
 		case *parser.Tracks:
-			/*
-				if t.Name != nil {
-					b.identifiers[t.Name.StringValue] = s
-				}
-			*/
+			// Do nothing by intention
 		default:
 			panic("Ooooops")
 		}
@@ -73,7 +65,31 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 		}
 	}
 
-	// Compute all tracks
+	// Compute all named tracks
+	for _, s := range ast.Statements {
+		if s == nil {
+			break
+		}
+		switch t := s.(type) {
+		case *parser.GroundPlate:
+			// Do nothing by intention
+		case *parser.Layer:
+			// Do nothing by intention
+		case *parser.Switchboard:
+			// Do nothing by intention
+		case *parser.Tracks:
+			if t.Name != nil {
+				err := b.processTracks(t)
+				if err != nil {
+					return b.model
+				}
+			}
+		default:
+			panic("Ooooops")
+		}
+	}
+
+	// Compute all anonymous tracks
 	for _, s := range ast.Statements {
 		if s == nil {
 			break
@@ -87,7 +103,10 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 			// Do nothing by intention
 		case *parser.Tracks:
 			if t.Name == nil {
-				b.processTracks(t)
+				err := b.processTracks(t)
+				if err != nil {
+					return b.model
+				}
 			}
 		default:
 			panic("Ooooops")
@@ -115,7 +134,7 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 func (b *Interpreter) processGround(ast *parser.GroundPlate) {
 	ground := &model.GroundPlate{}
 	ctx := NewGroundContext(ground)
-	err := b.processStatements([]IContext{ctx}, ast.Expressions)
+	err := b.processStatements([]IContext{b.ctx, ctx}, ast.Expressions)
 	if err != nil {
 		return
 	}
@@ -138,7 +157,7 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 	if err != nil {
 		return
 	}
-	err = b.processStatements([]IContext{ctx}, ast.Expressions)
+	err = b.processStatements([]IContext{b.ctx, ctx}, ast.Expressions)
 	if err != nil {
 		return
 	}
@@ -148,13 +167,25 @@ func (b *Interpreter) processLayer(ast *parser.Layer) {
 	}
 }
 
-func (b *Interpreter) processTracks(ast *parser.Tracks) {
-	ctx := NewTracksContext(b.model.Tracks.Layers[""])
-	err := b.processStatements([]IContext{ctx}, ast.Expressions)
-	if err != nil {
-		return
+func (b *Interpreter) processTracks(ast *parser.Tracks) *errlog.Error {
+	var ctx *TracksContext
+	var err *errlog.Error
+	if ast.Name != nil {
+		// Named tracks
+		ctx, err = b.ctx.RegisterTracks(b, ast.Location, ast.Name.StringValue)
+		if err != nil {
+			return err
+		}
+		// TODO: Do not allow defining the same named tracks twice.
+	} else {
+		// Anonymous tracks
+		ctx = NewTracksContext(b.model.Tracks.Layers[""])
 	}
-	ctx.Close(b)
+	err = b.processStatements([]IContext{b.ctx, ctx}, ast.Expressions)
+	if err != nil {
+		return err
+	}
+	return ctx.Close(b)
 }
 
 /*

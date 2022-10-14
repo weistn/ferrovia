@@ -32,6 +32,8 @@ func (ctx *GlobalContext) Lookup(b *Interpreter, loc errlog.LocationRange, name 
 		switch t := ident.(type) {
 		case *TracksContext:
 			return &ExprValue{Type: contextType, Context: t}, nil
+		case *LayerContext:
+			return &ExprValue{Type: contextType, Context: t}, nil
 		default:
 			panic("Ooooops")
 		}

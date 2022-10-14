@@ -35,6 +35,7 @@ type Layer struct {
 
 // Implements IDirective
 type Tracks struct {
+	// Optional
 	Name        *Token
 	Parameters  []*Parameter
 	Expressions []IExpression

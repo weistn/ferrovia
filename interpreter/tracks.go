@@ -104,6 +104,11 @@ func (c *TracksContext) Lookup(b *Interpreter, loc errlog.LocationRange, name st
 		if f, ok := c.trackFuncs[name]; ok {
 			return &ExprValue{Type: funcType, FuncValue: f}, nil
 		}
+		// Is it a track type?
+		_, ok := tracks.TrackFactories[name]
+		if !ok {
+			return nil, nil
+		}
 		f := &FuncValue{}
 		f.Name = name
 		f.Func = func(b *Interpreter, ctx []IContext, loc errlog.LocationRange, args ...parser.IExpression) (*ExprValue, *errlog.Error) {
@@ -142,7 +147,6 @@ func (c *TracksContext) Process(b *Interpreter, loc errlog.LocationRange, value 
 				c.elements = append(c.elements, v)
 				return nil
 			case *pendingAnchor:
-				println("APPEND anchor")
 				c.elements = append(c.elements, v)
 				return nil
 			}
@@ -174,6 +178,15 @@ func (c *TracksContext) Close(b *Interpreter) *errlog.Error {
 				c.first = con
 			}
 			c.last = e.SecondConnection()
+		case *TracksContext:
+			if e.first != nil {
+				if c.last != nil {
+					c.last.Connect(e.first)
+				} else {
+					c.first = e.first
+				}
+				c.last = e.last
+			}
 		case *pendingAnchor:
 			if c.last == nil {
 				// Apply to the next track
