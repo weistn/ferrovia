@@ -15,19 +15,19 @@ type Interpreter struct {
 	ast              *parser.File
 	model            *model.Model
 	tracksWithAnchor []*tracks.Track
-	identifiers      map[string]interface{}
+	ctx              *GlobalContext
 }
 
 func NewInterpreter(errlog *errlog.ErrorLog) *Interpreter {
 	m := &model.Model{}
 	m.Tracks = tracks.NewTrackSystem()
-	return &Interpreter{errlog: errlog, model: m, identifiers: make(map[string]interface{})}
+	return &Interpreter{errlog: errlog, model: m, ctx: NewGlobalContext()}
 }
 
 func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 	b.ast = ast
 
-	// Determine all identifiers
+	// Determine all identifiers mentioned in the switchboards
 	for _, s := range ast.Statements {
 		if s == nil {
 			break
@@ -36,15 +36,19 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 		case *parser.GroundPlate:
 			// Do nothing by intention
 		case *parser.Layer:
-			if t.Name.StringValue != "" {
-				b.identifiers[t.Name.StringValue] = s
-			}
+			/*
+				if t.Name.StringValue != "" {
+					b.identifiers[t.Name.StringValue] = s
+				}
+			*/
 		case *parser.Switchboard:
-			// Do nothing by intention
+			b.processSwitchboard(t)
 		case *parser.Tracks:
-			if t.Name != nil {
-				b.identifiers[t.Name.StringValue] = s
-			}
+			/*
+				if t.Name != nil {
+					b.identifiers[t.Name.StringValue] = s
+				}
+			*/
 		default:
 			panic("Ooooops")
 		}
@@ -61,7 +65,7 @@ func (b *Interpreter) ProcessStatics(ast *parser.File) *model.Model {
 		case *parser.Layer:
 			b.processLayer(t)
 		case *parser.Switchboard:
-			b.processSwitchboard(t)
+			// Do nothing by intention
 		case *parser.Tracks:
 			// Do nothing by intention
 		default:
@@ -130,12 +134,11 @@ func (b *Interpreter) processSwitchboard(ast *parser.Switchboard) {
 }
 
 func (b *Interpreter) processLayer(ast *parser.Layer) {
-	if _, ok := b.model.Tracks.Layers[ast.Name.StringValue]; ok {
-		b.errlog.LogError(errlog.ErrorDuplicateLayer, ast.Location, ast.Name.StringValue)
+	ctx, err := b.ctx.RegisterLayer(b, errlog.LocationRange{}, ast.Name.StringValue)
+	if err != nil {
 		return
 	}
-	ctx := NewLayerContext(&tracks.TrackLayer{Name: ast.Name.StringValue})
-	err := b.processStatements([]IContext{ctx}, ast.Expressions)
+	err = b.processStatements([]IContext{ctx}, ast.Expressions)
 	if err != nil {
 		return
 	}
@@ -301,7 +304,13 @@ func (b *Interpreter) processStatements(ctx []IContext, ast []parser.IExpression
 			return err
 		}
 		if result != nil {
-			_, err = b.expandFunc(ctx, result, errlog.LocationRange{})
+			result, err = b.expandFunc(ctx, result, errlog.LocationRange{})
+			if err != nil {
+				return err
+			}
+		}
+		if result != nil {
+			err = ctx[len(ctx)-1].Process(b, errlog.LocationRange{}, result)
 			if err != nil {
 				return err
 			}
@@ -329,13 +338,14 @@ func (b *Interpreter) evalExpression(ctx []IContext, expr parser.IExpression) (*
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("Context %T\n", newctx)
+		// fmt.Printf("Context %T\n", newctx)
 		ctx = append(ctx, newctx)
 		err = b.processStatements(ctx, t.Statements)
 		if err != nil {
 			return nil, err
 		}
-		return nil, newctx.Close(b)
+		err = newctx.Close(b)
+		return &ExprValue{Type: contextType, Context: newctx}, err
 	case *parser.CallExpression:
 		f, err := b.evalExpression(ctx, t.Func)
 		if err != nil {

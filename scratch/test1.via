@@ -58,3 +58,20 @@ tracks {
     }
     @(150 cm, 250 cm, 0 cm, 90 deg)
 }
+
+/*
+tracks {
+    @(150 cm, 300 cm, 0 cm, 90 deg)
+    G1
+    WL10 {
+        backright { R5 }
+    }
+    G4
+    WL10 {
+        backright { R5 }
+    }
+    Gleis1 {
+        G4
+    }
+}
+*/

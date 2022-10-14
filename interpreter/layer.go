@@ -39,6 +39,10 @@ func (c *LayerContext) Lookup(b *Interpreter, loc errlog.LocationRange, name str
 	return nil, nil
 }
 
+func (ctx *LayerContext) Process(b *Interpreter, loc errlog.LocationRange, value *ExprValue) *errlog.Error {
+	return b.errlog.LogError(errlog.ErrorIllegalInThisContext, loc)
+}
+
 func (c *LayerContext) Close(b *Interpreter) *errlog.Error {
 	return nil
 }

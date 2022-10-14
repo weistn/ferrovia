@@ -23,7 +23,7 @@ const (
 	ErrorTrackConnectedTwice
 	ErrorTrackMarkDefinedTwice
 	ErrorTrackPositionedTwice
-	ErrorDuplicateLayer
+	ErrorDuplicateIdentifier
 	ErrorUnknownLayer
 	ErrorNoTrackInRepeatExpression
 	ErrorNamedRailwayUsedTwice
@@ -31,6 +31,7 @@ const (
 	ErrorArgumentCountMismatch
 	ErrorUnknownMethod
 	ErrorNotAMethod
+	ErrorIllegalInThisContext
 )
 
 type Error struct {
@@ -90,8 +91,8 @@ func (e *Error) ToString(log *ErrorLog) string {
 			return "Expected " + str + " but got " + "end of line"
 		}
 		return "Expected " + str + " but got " + "`" + e.args[0] + "`"
-	case ErrorDuplicateLayer:
-		return "Two layers of the same name `" + e.args[0] + "` defined"
+	case ErrorDuplicateIdentifier:
+		return "Another identifier of the same name `" + e.args[0] + "` has already been defined"
 	case ErrorUnknownLayer:
 		return "Unknown layer `" + e.args[0] + "`"
 	case ErrorNoTrackInRepeatExpression:
@@ -110,6 +111,8 @@ func (e *Error) ToString(log *ErrorLog) string {
 		return "The provided expression is not a method"
 	case ErrorTypeMismtach:
 		return "Type mismatch"
+	case ErrorIllegalInThisContext:
+		return "The execution of this statement is illegal in the current context"
 	}
 	println(e.code)
 	panic("Should not happen")

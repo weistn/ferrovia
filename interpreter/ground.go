@@ -124,6 +124,10 @@ func (c *GroundContext) Lookup(b *Interpreter, loc errlog.LocationRange, name st
 	return nil, nil
 }
 
+func (c *GroundContext) Process(b *Interpreter, loc errlog.LocationRange, value *ExprValue) *errlog.Error {
+	return b.errlog.LogError(errlog.ErrorIllegalInThisContext, loc)
+}
+
 func (c *GroundContext) Close(b *Interpreter) *errlog.Error {
 	return nil
 }

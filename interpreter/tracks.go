@@ -18,7 +18,7 @@ type pendingAnchor struct {
 type TracksContext struct {
 	// The currently selected layer
 	layer *tracks.TrackLayer
-	// A list of *Track or *pendingAnchor or *TrackLayer instances.
+	// A list of *Track or *pendingAnchor instances.
 	// The list is processed upon Close().
 	elements []interface{}
 	// Populate after Close()
@@ -61,7 +61,7 @@ func NewTracksContext(layer *tracks.TrackLayer) *TracksContext {
 				return nil, b.errlog.LogError(errlog.ErrorUnknownLayer, loc, name)
 			}
 			ctx.layer = l
-			return nil, err
+			return nil, nil
 		},
 	}
 	ctx.atFunc = FuncValue{
@@ -86,8 +86,9 @@ func NewTracksContext(layer *tracks.TrackLayer) *TracksContext {
 			if err != nil {
 				return nil, err
 			}
-			ctx.elements = append(ctx.elements, &pendingAnchor{x: x, y: y, z: z, angle: angle, location: loc})
-			return nil, nil
+			// ctx.elements = append(ctx.elements, &pendingAnchor{x: x, y: y, z: z, angle: angle, location: loc})
+			// return nil, nil
+			return &ExprValue{Type: contextType, Context: &ValueContext{Value: &pendingAnchor{x: x, y: y, z: z, angle: angle, location: loc}}}, nil
 		},
 	}
 	return ctx
@@ -115,16 +116,39 @@ func (c *TracksContext) Lookup(b *Interpreter, loc errlog.LocationRange, name st
 				return nil, b.errlog.LogError(errlog.ErrorUnknownTrackType, loc, name)
 			}
 			newTrack.SourceLocation = loc
-			c.elements = append(c.elements, newTrack)
 			// In case of a turnout, create a TurnoutContext
 			if newTrack.Geometry.IncomingConnectionCount+newTrack.Geometry.OutgoingConnectionCount > 2 {
 				return &ExprValue{Type: contextType, Context: NewTurnoutContext(newTrack)}, nil
 			}
-			return nil, nil
+			return &ExprValue{Type: contextType, Context: &ValueContext{Value: newTrack}}, nil
 		}
 		c.trackFuncs[name] = f
 		return &ExprValue{Type: funcType, FuncValue: f}, nil
 	}
+}
+
+func (c *TracksContext) Process(b *Interpreter, loc errlog.LocationRange, value *ExprValue) *errlog.Error {
+	if value.Type == contextType {
+		switch t := value.Context.(type) {
+		case *TracksContext:
+			c.elements = append(c.elements, t)
+			return nil
+		case *TurnoutContext:
+			c.elements = append(c.elements, t.track)
+			return nil
+		case *ValueContext:
+			switch v := t.Value.(type) {
+			case *tracks.Track:
+				c.elements = append(c.elements, v)
+				return nil
+			case *pendingAnchor:
+				println("APPEND anchor")
+				c.elements = append(c.elements, v)
+				return nil
+			}
+		}
+	}
+	return b.errlog.LogError(errlog.ErrorIllegalInThisContext, loc)
 }
 
 func (c *TracksContext) Close(b *Interpreter) *errlog.Error {
@@ -179,7 +203,6 @@ func NewTurnoutContext(track *tracks.Track) *TurnoutContext {
 }
 
 func (c *TurnoutContext) Lookup(b *Interpreter, loc errlog.LocationRange, name string) (*ExprValue, *errlog.Error) {
-	println("TURNOUT Lookup", name)
 	switch name {
 	case "left":
 		c.left = NewTracksContext(c.track.Layer)
@@ -214,6 +237,11 @@ func (c *TurnoutContext) connect(c1, c2 *tracks.TrackConnection) {
 		return
 	}
 	c1.Connect(c2)
+}
+
+func (c *TurnoutContext) Process(b *Interpreter, loc errlog.LocationRange, value *ExprValue) *errlog.Error {
+	// TODO: Throw error on unacceptable values
+	return nil
 }
 
 func (c *TurnoutContext) Close(b *Interpreter) *errlog.Error {
